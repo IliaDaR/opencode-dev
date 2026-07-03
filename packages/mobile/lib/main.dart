@@ -1,18 +1,19 @@
-import "package:flutter/material.dart"
-import "package:flutter/services.dart"
-import "package:google_fonts/google_fonts.dart"
-import "screens/projects_screen.dart"
-import "services/settings_service.dart"
+import "package:flutter/material.dart";
+import "package:flutter/services.dart";
+import "package:google_fonts/google_fonts.dart";
+import "screens/projects_screen.dart";
+import "services/settings_service.dart";
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized()
-  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp])
-  await SettingsService.init()
-  runApp(const OpenCodeApp())
+  WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations(
+      [DeviceOrientation.portraitUp]);
+  await SettingsService.init();
+  runApp(const OpenCodeApp());
 }
 
 class OpenCodeApp extends StatelessWidget {
-  const OpenCodeApp({super.key})
+  const OpenCodeApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +37,8 @@ class OpenCodeApp extends StatelessWidget {
         ),
         cardTheme: CardThemeData(
           color: const Color(0xFF161B22),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12)),
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
@@ -53,11 +55,14 @@ class OpenCodeApp extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             borderSide: const BorderSide(color: Color(0xFF58A6FF)),
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16, vertical: 14),
         ),
-        textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
+        textTheme:;
+            GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
       ),
       home: const ProjectsScreen(),
-    )
+    );
   }
 }
+
