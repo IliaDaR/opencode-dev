@@ -1,0 +1,35 @@
+name: opencode_mobile
+description: OpenCode Mobile — AI coding agent for Android
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.2.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  http: ^1.2.0
+  shared_preferences: ^2.3.0
+  path_provider: ^2.1.0
+  path: ^1.9.0
+  shadcn_ui: ^0.15.0
+  flutter_markdown: ^0.7.0
+  file_picker: ^8.0.0
+  google_fonts: ^6.2.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.13.0
+
+flutter:
+  uses-material-design: true
+  assets: []
+
+flutter_launcher_icons:
+  android: true
+  adaptive_icon_background: "#0d1117"
+  adaptive_icon_foreground: "assets/icon_foreground.png"

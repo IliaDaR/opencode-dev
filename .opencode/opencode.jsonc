@@ -1,0 +1,210 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "deepseek/deepseek-v4-pro",
+  "shell": "powershell",
+  "instructions": ["AGENTS.md"],
+  "provider": {},
+  "permission": {
+    "edit": "allow",
+    "bash": {
+      "git push --force*": "deny",
+      "git push*": "ask",
+      "git commit*": "allow",
+      "rm -rf *": "deny",
+      "gh pr merge*": "deny",
+      "gh pr create*": "ask",
+      "gh release*": "ask",
+      "npm publish*": "ask",
+      "*": "allow"
+    },
+    "webfetch": "allow",
+    "websearch": "allow",
+    "external_directory": {
+      "~/.local/share/opencode/**": "allow",
+      "C:\\Users\\User\\AppData\\Local\\Temp\\opencode\\**": "allow",
+      "*": "allow"
+    },
+    "task": "allow",
+    "todowrite": "allow",
+    "question": "allow",
+    "skill": "allow"
+  },
+  "references": {
+    "effect": {
+      "repository": "github.com/Effect-TS/effect-smol",
+      "description": "Use for Effect v4 and effect-smol implementation details"
+    },
+    "opencode-local": {
+      "path": "~/.local/share/opencode",
+      "description": "Contains opencode logs and data"
+    }
+  },
+  "skills": {
+    "paths": [".opencode/skills"]
+  },
+  "mcp": {
+    "github": {
+      "type": "local",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-github"],
+      "environment": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+      },
+      "enabled": true,
+      "timeout": 30000
+    },
+    "playwright": {
+      "type": "local",
+      "command": ["npx", "-y", "@playwright/mcp"],
+      "enabled": true,
+      "timeout": 60000
+    },
+    "filesystem": {
+      "type": "local",
+      "command": ["npx", "-y", "@modelcontextprotocol/server-filesystem", "."],
+      "enabled": true,
+      "timeout": 15000
+    },
+    "brave-search": {
+      "type": "local",
+      "command": ["npx", "-y", "@anthropic/mcp-server-brave-search"],
+      "environment": {
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+      },
+      "enabled": false
+    },
+    "postgres": {
+      "type": "local",
+      "command": ["npx", "-y", "@anthropic/mcp-server-postgres"],
+      "environment": {
+        "DATABASE_URL": "${DATABASE_URL}"
+      },
+      "enabled": false
+    }
+  },
+  "agent": {
+    "architect": {
+      "model": "deepseek/deepseek-v4-pro",
+      "mode": "subagent",
+      "description": "Architect agent for planning features, designing systems, analyzing codebase structure, and making architectural decisions.",
+      "color": "#8E44AD",
+      "steps": 50,
+      "temperature": 0.3,
+      "permission": {
+        "edit": "ask",
+        "bash": "allow",
+        "webfetch": "allow",
+        "websearch": "allow"
+      }
+    },
+    "reviewer": {
+      "model": "deepseek/deepseek-v4-pro",
+      "mode": "subagent",
+      "description": "Code review agent for style violations, bugs, anti-patterns. Use for PR review or pre-commit checks.",
+      "color": "#E74C3C",
+      "steps": 40,
+      "temperature": 0.2,
+      "permission": {
+        "edit": "deny",
+        "bash": "allow",
+        "webfetch": "allow"
+      }
+    },
+    "debugger": {
+      "model": "deepseek/deepseek-v4-pro",
+      "mode": "subagent",
+      "description": "Specialized debugging agent for tracing bugs, reading stack traces, and finding root causes.",
+      "color": "#F1C40F",
+      "steps": 40,
+      "temperature": 0.3,
+      "permission": {
+        "edit": "ask",
+        "bash": "allow",
+        "webfetch": "allow",
+        "websearch": "allow"
+      }
+    },
+    "typesmith": {
+      "model": "deepseek/deepseek-v4-pro",
+      "mode": "subagent",
+      "description": "TypeScript type-level programming and Effect pattern specialist. Use for complex generics, schemas, layer composition.",
+      "color": "#3498DB",
+      "steps": 35,
+      "temperature": 0.2,
+      "permission": {
+        "edit": "ask",
+        "bash": "allow",
+        "webfetch": "allow"
+      }
+    },
+    "refactor": {
+      "model": "deepseek/deepseek-v4-pro",
+      "mode": "subagent",
+      "description": "Safe code refactoring agent. Use for renaming, extracting, restructuring code while preserving behavior.",
+      "color": "#2ECC71",
+      "steps": 50,
+      "temperature": 0.2,
+      "permission": {
+        "edit": "allow",
+        "bash": "allow",
+        "webfetch": "allow"
+      }
+    },
+    "scribe": {
+      "model": "deepseek/deepseek-v4-pro",
+      "mode": "subagent",
+      "description": "Universal code writer. Generates production code in any language. Use for writing features, modules, components, or any non-trivial code.",
+      "color": "#1ABC9C",
+      "steps": 40,
+      "temperature": 0.1,
+      "permission": {
+        "edit": "allow",
+        "bash": "allow",
+        "webfetch": "allow"
+      }
+    },
+    "quick-fix": {
+      "model": "deepseek/deepseek-v4-pro",
+      "mode": "subagent",
+      "description": "Fast bug patcher for simple, well-understood bugs. Use when root cause is known and fix is straightforward.",
+      "color": "#E67E22",
+      "steps": 10,
+      "temperature": 0.0,
+      "permission": {
+        "edit": "allow",
+        "bash": "allow"
+      }
+    }
+  },
+  "tools": {
+    "github-triage": true,
+    "github-pr-search": true
+  },
+  "compaction": {
+    "auto": true,
+    "tail_turns": 6,
+    "prune": true,
+    "preserve_recent_tokens": 20000,
+    "reserved": 8000
+  },
+  "experimental": {
+    "batch_tool": true,
+    "continue_loop_on_deny": true,
+    "mcp_timeout": 60000,
+    "primary_tools": ["edit"],
+    "openTelemetry": false
+  },
+  "tool_output": {
+    "max_lines": 4000,
+    "max_bytes": 102400
+  },
+  "attachment": {
+    "image": {
+      "auto_resize": true,
+      "max_width": 3000,
+      "max_height": 3000,
+      "max_base64_bytes": 10485760
+    }
+  },
+  "formatter": true,
+  "lsp": true
+}
