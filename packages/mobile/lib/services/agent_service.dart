@@ -3,6 +3,9 @@ import "dart:io";
 import "package:http/http.dart" as http;
 import "storage_service.dart";
 import "git_service.dart";
+import "github_service.dart";
+import "browser_service.dart";
+import "sql_service.dart";
 import "skills.dart";
 import "session_memory.dart";
 import "research_service.dart";
@@ -595,23 +598,339 @@ ${SkillKnowledge.all}
       "function": {
         "name": "ask_user",
         "description":
-            "Ask the user a clarifying question when you need more information to proceed. Use when requirements are ambiguous or you need to choose between approaches.",
+            "Ask the user a clarifying question when you need more information. Use when requirements are ambiguous or you need to choose between approaches.",
         "parameters": {
           "type": "object",
           "properties": {
-            "question": {
-              "type": "string",
-              "description":
-                  "The question to ask the user",
-            },
+            "question": {"type": "string"},
             "options": {
               "type": "array",
               "items": {"type": "string"},
-              "description":
-                  "Suggested answer options (optional)",
             },
           },
           "required": ["question"],
+        },
+      },
+    },
+    // GitHub API tools
+    {
+      "type": "function",
+      "function": {
+        "name": "github_list_issues",
+        "description":
+            "List GitHub issues for a repository. Use to find bugs, feature requests, or tasks.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "owner": {
+              "type": "string",
+              "description": "Repo owner",
+            },
+            "repo": {
+              "type": "string",
+              "description": "Repo name",
+            },
+            "state": {
+              "type": "string",
+              "description":
+                  "Issue state: open, closed, all",
+            },
+            "label": {"type": "string"},
+          },
+          "required": ["owner", "repo"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "github_create_issue",
+        "description":
+            "Create a new GitHub issue.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "owner": {"type": "string"},
+            "repo": {"type": "string"},
+            "title": {"type": "string"},
+            "body": {"type": "string"},
+            "labels": {
+              "type": "array",
+              "items": {"type": "string"},
+            },
+          },
+          "required": [
+            "owner",
+            "repo",
+            "title",
+            "body"
+          ],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "github_list_prs",
+        "description":
+            "List pull requests for a repository.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "owner": {"type": "string"},
+            "repo": {"type": "string"},
+            "state": {
+              "type": "string",
+              "description":
+                  "PR state: open, closed, all",
+            },
+          },
+          "required": ["owner", "repo"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "github_get_pr",
+        "description":
+            "Get details of a specific pull request including changed files.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "owner": {"type": "string"},
+            "repo": {"type": "string"},
+            "number": {"type": "integer"},
+          },
+          "required": [
+            "owner",
+            "repo",
+            "number"
+          ],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "github_search_code",
+        "description":
+            "Search code across GitHub. Use to find examples, implementations, or usage patterns.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description":
+                  "Search query (supports GitHub search syntax)",
+            },
+          },
+          "required": ["query"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "github_get_file",
+        "description":
+            "Read a file directly from a GitHub repository without cloning.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "owner": {"type": "string"},
+            "repo": {"type": "string"},
+            "path": {
+              "type": "string",
+              "description": "File path in repo",
+            },
+            "ref": {
+              "type": "string",
+              "description":
+                  "Branch/tag (default: main)",
+            },
+          },
+          "required": [
+            "owner",
+            "repo",
+            "path"
+          ],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "github_get_repo",
+        "description":
+            "Get repository info: stars, language, description, open issues.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "owner": {"type": "string"},
+            "repo": {"type": "string"},
+          },
+          "required": ["owner", "repo"],
+        },
+      },
+    },
+    // Browser/web tools
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_open",
+        "description":
+            "Open a web page and extract its content — title, headings, links, text. Like reading a webpage in a browser.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "Full URL to open",
+            },
+          },
+          "required": ["url"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_extract",
+        "description":
+            "Extract specific data from a web page using a regex pattern. Useful for scraping structured data.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "url": {"type": "string"},
+            "pattern": {
+              "type": "string",
+              "description":
+                  "Regex pattern with capture groups",
+            },
+          },
+          "required": ["url", "pattern"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "browser_follow",
+        "description":
+            "Click/follow a link on a web page by its text.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "Current page URL",
+            },
+            "link_text": {
+              "type": "string",
+              "description": "Text of the link to click",
+            },
+          },
+          "required": ["url", "link_text"],
+        },
+      },
+    },
+    // SQL tools
+    {
+      "type": "function",
+      "function": {
+        "name": "sql_detect",
+        "description":
+            "Detect SQLite databases in the project.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "project": {"type": "string"},
+          },
+          "required": ["project"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "sql_query",
+        "description":
+            "Run an SQL query against a SQLite database in the project.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "project": {"type": "string"},
+            "db_file": {
+              "type": "string",
+              "description": "Database filename",
+            },
+            "query": {
+              "type": "string",
+              "description": "SQL query to run",
+            },
+          },
+          "required": [
+            "project",
+            "db_file",
+            "query"
+          ],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "sql_schema",
+        "description":
+            "Show the schema of a SQLite database — all tables and their columns.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "project": {"type": "string"},
+            "db_file": {"type": "string"},
+          },
+          "required": ["project", "db_file"],
+        },
+      },
+    },
+    // Code quality tools
+    {
+      "type": "function",
+      "function": {
+        "name": "find_patterns",
+        "description":
+            "Find similar code patterns across the project. Useful for discovering conventions, duplicated code, or finding all usages of an API.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "project": {"type": "string"},
+            "pattern": {
+              "type": "string",
+              "description":
+                  "Code pattern to search for",
+            },
+          },
+          "required": ["project", "pattern"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "suggest_tests",
+        "description":
+            "Analyze a source file and suggest what tests should be written. Doesn't write tests — suggests test cases based on the code's logic.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "project": {"type": "string"},
+            "file_path": {
+              "type": "string",
+              "description": "Source file to analyze",
+            },
+          },
+          "required": ["project", "file_path"],
         },
       },
     },
@@ -772,6 +1091,65 @@ ${SkillKnowledge.all}
             return "❓ $q\n\nOptions: ${opts.join(", ")}";
           }
           return "❓ $q";
+        // GitHub tools
+        case "github_list_issues":
+          return await GitHubService.listIssues(
+              args["owner"], args["repo"],
+              state: args["state"] ?? "open",
+              label: args["label"]);
+        case "github_create_issue":
+          return await GitHubService.createIssue(
+              args["owner"], args["repo"],
+              args["title"], args["body"],
+              labels: args["labels"]?.cast<String>());
+        case "github_list_prs":
+          return await GitHubService.listPRs(
+              args["owner"], args["repo"],
+              state: args["state"] ?? "open");
+        case "github_get_pr":
+          return await GitHubService.getPR(
+              args["owner"], args["repo"], args["number"]);
+        case "github_search_code":
+          return await GitHubService.searchCode(
+              args["query"]);
+        case "github_get_file":
+          return await GitHubService.getFileContent(
+              args["owner"], args["repo"], args["path"],
+              ref: args["ref"] ?? "main");
+        case "github_get_repo":
+          return await GitHubService.getRepo(
+              args["owner"], args["repo"]);
+        // Browser tools
+        case "browser_open":
+          return await BrowserService.openPage(args["url"]);
+        case "browser_extract":
+          return await BrowserService.extractData(
+              args["url"], args["pattern"]);
+        case "browser_follow":
+          return await BrowserService.followLink(
+              args["url"], args["link_text"]);
+        // SQL tools
+        case "sql_detect":
+          return await SqlService.detectDatabases(
+              args["project"]);
+        case "sql_query":
+          return await SqlService.runQuery(args["project"],
+              args["db_file"], args["query"]);
+        case "sql_schema":
+          return await SqlService.showSchema(
+              args["project"], args["db_file"]);
+        // Code quality
+        case "find_patterns":
+          final matches =
+              await CodeIntelligence.findSimilarPatterns(
+                  args["project"], args["pattern"]);
+          if (matches.isEmpty) return "No matches found";
+          return matches
+              .map((m) => "${m.file}:${m.line}\n  ${m.snippet}")
+              .join("\n\n");
+        case "suggest_tests":
+          return await _suggestTests(
+              args["project"], args["file_path"]);
         default:
           return "Unknown tool: $name";
       }
@@ -853,6 +1231,44 @@ ${SkillKnowledge.all}
     escaped = escaped.replaceAll(r'\*', r'[^/]*');
     escaped = escaped.replaceAll('<<DEEP>>', '.*');
     return RegExp('^$escaped\$');
+  }
+
+  Future<String> _suggestTests(
+      String project, String filePath) async {
+    try {
+      final content =
+          await StorageService.readFile(project, filePath);
+      final buf = StringBuffer();
+      buf.writeln("## Test suggestions for $filePath\n");
+      buf.writeln("Based on code analysis:\n");
+
+      // Find function/method definitions
+      final funcRegex = RegExp(
+          r'(?:function|def|async\s+function|export\s+(?:async\s+)?function|const\s+\w+\s*=\s*(?:async\s*)?\(|static\s+(?:async\s*)?\w+\s*\()\s*(\w+)',
+          multiLine: true);
+
+      final funcs = funcRegex.allMatches(content).toList();
+      if (funcs.isEmpty) {
+        buf.writeln("No testable functions found.");
+        return buf.toString();
+      }
+
+      for (final m in funcs.take(8)) {
+        final name = m.group(1) ?? "unknown";
+        buf.writeln("### $name");
+        buf.writeln("- [ ] Test happy path with valid input");
+        buf.writeln("- [ ] Test with null/undefined input");
+        buf.writeln("- [ ] Test with empty/zero input");
+        buf.writeln("- [ ] Test error handling path");
+        buf.writeln();
+      }
+
+      buf.writeln(
+          "Match the project's existing test framework and patterns.");
+      return buf.toString();
+    } catch (e) {
+      return "Cannot analyze file: $e";
+    }
   }
 
   Future<String> _editFile(String project, String path,
