@@ -4,6 +4,7 @@ import "package:flutter/material.dart";
 import "../services/agent_service.dart";
 import "../services/git_service.dart";
 import "../services/storage_service.dart";
+import "../services/session_memory.dart";
 
 class ChatScreen extends StatefulWidget {
   final String projectName;
@@ -41,29 +42,49 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _init() async {
     _addMessage("system", "Scanning project...");
-    await _agent.scanProject();
-    _agent.reset();
+    await SessionMemory.init();
 
-    if (_agent.projectContext != null) {
-      final ctx = _agent.projectContext!;
-      _projectFiles =
-          ctx.files.where((f) => !f.startsWith(".")).toList();
+    final hasSession = await _agent.loadSession();
+    if (hasSession) {
+      if (_agent.projectContext != null) {
+        _projectFiles = _agent.projectContext!.files
+            .where((f) => !f.startsWith("."))
+            .toList();
+      }
       _addMessage("system",
-          "Project **${widget.projectName}** loaded — ${ctx.files.length} files");
+          "Session restored — continuing where we left off");
+
+      for (final m in _agent.messages) {
+        if (m.role != "system") {
+          _addMessage(m.role, m.content);
+        }
+      }
+    } else {
+      _agent.reset();
+
+      if (_agent.projectContext != null) {
+        final ctx = _agent.projectContext!;
+        _projectFiles =
+            ctx.files.where((f) => !f.startsWith(".")).toList();
+        _addMessage("system",
+            "Project **${widget.projectName}** loaded — ${ctx.files.length} files");
+      }
+
+      _addMessage("assistant",
+          "Ready. What are we working on?\n\n"
+          "Modes: auto /brainstorm /architect /code /debug /refactor\n"
+          "Type /<mode> to switch, or I'll detect automatically.");
     }
 
     try {
       final status = await widget.gitService.getStatus();
       _gitStatus = status;
-      if (status != "No changes" && status != "Not a git repository") {
-        _addMessage("system", "Git: uncommitted changes detected");
+      if (status != "No changes" &&
+          status != "Not a git repository") {
+        _addMessage(
+            "system", "Git: uncommitted changes detected");
       }
     } catch (_) {}
-
-    _addMessage("assistant",
-        "Ready. What are we working on?\n\n"
-        "Modes: auto /brainstorm /architect /code /debug /refactor\n"
-        "Type /<mode> to switch, or I'll detect automatically.");
   }
 
   void _addMessage(String role, String content) {
@@ -142,11 +163,23 @@ class _ChatScreenState extends State<ChatScreen> {
         _addMessage("system", status);
         return;
       }
+      if (cmd == "/clear" || cmd == "/reset") {
+        await SessionMemory.clearMemory(widget.projectName);
+        _agent.reset();
+        setState(() {
+          _messages.clear();
+          _mode = AgentMode.auto;
+        });
+        _addMessage(
+            "system", "Memory cleared. Fresh session.");
+        return;
+      }
       if (cmd == "/help") {
         _addMessage("system",
             "Commands: /auto /brainstorm /architect /code /debug /refactor\n"
             "/files — list project files\n"
             "/git — show git status\n"
+            "/clear — reset session memory\n"
             "/help — this message\n\n"
             "Just type your task — I'll auto-detect the mode.");
         return;

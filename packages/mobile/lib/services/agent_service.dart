@@ -4,6 +4,7 @@ import "package:http/http.dart" as http;
 import "storage_service.dart";
 import "git_service.dart";
 import "skills.dart";
+import "session_memory.dart";
 import "../models/message.dart";
 import "settings_service.dart";
 
@@ -120,6 +121,56 @@ class AgentService {
 
     messages.insert(
         1, Message(role: "system", content: ctx.toString()));
+  }
+
+  /// Load saved session from disk
+  Future<bool> loadSession() async {
+    final saved = await SessionMemory.loadChat(projectName);
+    if (saved == null || saved.isEmpty) return false;
+
+    messages.clear();
+    messages.add(Message(
+        role: "system",
+        content: _buildSystemPrompt(currentMode)));
+    messages.addAll(saved);
+    _injectContext();
+
+    final decisions =
+        await SessionMemory.getDecisions(projectName);
+    if (decisions.isNotEmpty) {
+      final mem = StringBuffer();
+      mem.writeln("\n## Project Memory (previous decisions)");
+      for (final d in decisions.reversed.take(5)) {
+        mem.writeln("- ${d["topic"]}: ${d["decision"]}");
+      }
+      messages.insert(
+          1, Message(role: "system", content: mem.toString()));
+    }
+
+    return true;
+  }
+
+  /// Save current session to disk
+  Future<void> saveSession() async {
+    final nonSystem =
+        messages.where((m) => m.role != "system").toList();
+    if (nonSystem.length > 2) {
+      await SessionMemory.saveChat(projectName, nonSystem);
+    }
+  }
+
+  /// Remember an important decision
+  Future<void> remember(String topic, String decision) async {
+    await SessionMemory.rememberDecision(
+        projectName, topic, decision);
+  }
+
+  /// Compress context if conversation is too long
+  void maybeCompress() {
+    if (messages.length > 30) {
+      messages.setAll(
+          0, ContextManager.compress(messages, keepLast: 6));
+    }
   }
 
   static String _buildSystemPrompt(AgentMode mode) {
@@ -419,6 +470,7 @@ ${SkillKnowledge.all}
     }
 
     messages.add(Message(role: "user", content: userMessage));
+    maybeCompress();
 
     int loopCount = 0;
     const maxLoops = 20;
@@ -510,6 +562,8 @@ ${SkillKnowledge.all}
           role: "assistant", content: msg["content"] ?? ""));
       break;
     }
+
+    saveSession();
   }
 
   void reset() {
