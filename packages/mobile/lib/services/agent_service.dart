@@ -1484,7 +1484,7 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
               .generateApiDocs(args["project"],
                   args["source_file"]);
         default:
-          return "Unknown tool: $name";
+          return "Error: Unknown tool '$name'. Available tools: read_file, write_file, edit_file, list_files, glob_files, search_code, delete_file, run_command, git_sync, git_status, web_search, web_fetch, browser_open, browser_extract, browser_follow, sql_detect, sql_query, sql_schema, github_list_issues, github_create_issue, github_list_prs, github_get_pr, github_search_code, github_get_file, github_get_repo, diagnose_file, analyze_project, check_imports, find_patterns, suggest_tests, suggest_optimizations, generate_test_template, generate_boilerplate, impact_analysis, delegate_task, estimate_effort, generate_readme, generate_api_docs, check_deploy_readiness, generate_docker_compose, generate_ci_config, create_tasks, ask_user.";
       }
     } catch (e) {
       return "Error: $e";
@@ -1633,11 +1633,16 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
     messages.add(Message(role: "user", content: userMessage));
     maybeCompress();
 
+    maybeCompress();
+
     int loopCount = 0;
     const maxLoops = 20;
 
     while (loopCount < maxLoops) {
       loopCount++;
+      if (loopCount == maxLoops) {
+        yield "\n(Max steps reached — task may be incomplete. Try breaking it into smaller steps.)\n";
+      }
 
       final body = jsonEncode({
         "model": "deepseek-chat",
@@ -1731,16 +1736,12 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
           final preview = argsStr.length > 60
               ? "${argsStr.substring(0, 60)}..."
               : argsStr;
-          yield "\n[🔧 $toolName] $preview\n";
-
           onToolCall?.call(toolName, preview);
 
           final result =
               await _executeTool(toolName, toolArgs);
 
           onToolResult?.call(toolName, preview, result);
-
-          yield result;
 
           messages.add(Message(
             role: "tool",

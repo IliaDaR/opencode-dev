@@ -24,13 +24,23 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
 
   Future<void> _loadDir(String path) async {
     setState(() => _loading = true);
-    final entries = await StorageService.listDir(
-        widget.projectName, path);
-    setState(() {
-      _currentPath = path;
-      _entries = entries;
-      _loading = false;
-    });
+    try {
+      final entries = await StorageService.listDir(
+          widget.projectName, path);
+      if (mounted) {
+        setState(() {
+          _currentPath = path;
+          _entries = entries;
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Cannot read directory: $e")));
+      }
+    }
   }
 
   void _navigateTo(String dirName) {
@@ -110,8 +120,9 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    final dirs = _entries.whereType<Directory>().toList();
-    final files = _entries.whereType<File>().toList();
+    final dirs = _entries.whereType<Directory>().take(200).toList();
+    final files = _entries.whereType<File>().take(200).toList();
+    final truncated = _entries.length > 400;
 
     return Scaffold(
       appBar: AppBar(
@@ -178,6 +189,14 @@ class _FileBrowserScreenState extends State<FileBrowserScreen> {
                     padding: EdgeInsets.all(32),
                     child: Center(
                         child: Text("Empty directory",
+                            style: TextStyle(
+                                color: Color(0xFF8B949E)))),
+                  ),
+                if (truncated)
+                  const Padding(
+                    padding: EdgeInsets.all(16),
+                    child: Center(
+                        child: Text("Showing first 400 entries...",
                             style: TextStyle(
                                 color: Color(0xFF8B949E)))),
                   ),

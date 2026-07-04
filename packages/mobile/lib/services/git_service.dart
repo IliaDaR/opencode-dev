@@ -28,7 +28,7 @@ class GitService {
 
   Future<String> clone() async {
     if (await _projectDir.exists()) {
-      await _projectDir.delete(recursive: true);
+      return "Project already exists. Use pull to update, or delete it first.";
     }
 
     final authUrl =

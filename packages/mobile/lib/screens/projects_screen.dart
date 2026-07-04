@@ -27,6 +27,10 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     _checkConfig();
   }
 
+    _cloneCtrl.dispose();
+    super.dispose();
+  }
+
   Future<void> _checkConfig() async {
     if (!SettingsService.isConfigured) {
       if (mounted) {
