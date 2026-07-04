@@ -39,6 +39,18 @@ class SettingsService {
     _prefs.setString("current_project", value);
   }
 
+  static String get language {
+    return _prefs.getString("language") ?? "";
+  }
+
+  static set language(String value) {
+    _prefs.setString("language", value);
+  }
+
+  static void setLanguage(String lang) {
+    _prefs.setString("language", lang);
+  }
+
   static bool get isConfigured {
     return deepseekApiKey.isNotEmpty && githubToken.isNotEmpty;
   }

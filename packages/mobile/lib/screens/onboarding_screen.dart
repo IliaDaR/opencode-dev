@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 import "../services/settings_service.dart";
+import "../services/localization.dart";
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -93,7 +94,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   if (_step > 0)
                     TextButton(
                       onPressed: _back,
-                      child: const Text("Back"),
+                      child: Text(AppLocalization.get("back")),
                     ),
                   const Spacer(),
                   FilledButton(
@@ -110,7 +111,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             height: 20,
                             child: CircularProgressIndicator(
                                 strokeWidth: 2, color: Colors.white))
-                        : Text(_step == 2 ? "Start" : "Next",
+                        : Text(_step == 2 ? AppLocalization.get("start") : AppLocalization.get("next"),
                             style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600)),

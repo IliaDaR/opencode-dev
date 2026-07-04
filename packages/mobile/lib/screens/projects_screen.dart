@@ -34,6 +34,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
           MaterialPageRoute(
               builder: (_) => const OnboardingScreen()),
         );
+        await StorageService.init();
         _loadProjects();
       }
     } else {

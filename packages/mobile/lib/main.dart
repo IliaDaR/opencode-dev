@@ -1,22 +1,31 @@
 import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:google_fonts/google_fonts.dart";
+import "screens/language_screen.dart";
 import "screens/projects_screen.dart";
 import "services/settings_service.dart";
+import "services/localization.dart";
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setPreferredOrientations(
       [DeviceOrientation.portraitUp]);
   await SettingsService.init();
+  AppLocalization.current = SettingsService.language;
   runApp(const OpenCodeApp());
 }
 
-class OpenCodeApp extends StatelessWidget {
+class OpenCodeApp extends StatefulWidget {
   const OpenCodeApp({super.key});
+  @override
+  State<OpenCodeApp> createState() => _OpenCodeAppState();
+}
 
+class _OpenCodeAppState extends State<OpenCodeApp> {
   @override
   Widget build(BuildContext context) {
+    final showLanguage = SettingsService.language.isEmpty;
+
     return MaterialApp(
       title: "OpenCode",
       debugShowCheckedModeBanner: false,
@@ -61,7 +70,9 @@ class OpenCodeApp extends StatelessWidget {
         textTheme:
             GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
       ),
-      home: const ProjectsScreen(),
+      home: showLanguage
+          ? const LanguageScreen()
+          : const ProjectsScreen(),
     );
   }
 }
