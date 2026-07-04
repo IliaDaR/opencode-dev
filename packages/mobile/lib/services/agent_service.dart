@@ -5,10 +5,21 @@ import "storage_service.dart";
 import "git_service.dart";
 import "skills.dart";
 import "session_memory.dart";
+import "research_service.dart";
+import "user_profile.dart";
+import "code_intelligence.dart";
 import "../models/message.dart";
 import "settings_service.dart";
 
-enum AgentMode { auto, brainstorm, architect, code, debug, refactor }
+enum AgentMode {
+  auto,
+  brainstorm,
+  architect,
+  code,
+  debug,
+  refactor,
+  research,
+}
 
 class ProjectContext {
   final List<String> files;
@@ -97,7 +108,7 @@ class AgentService {
     }
   }
 
-  void _injectContext() {
+  Future<void> _injectContext() async {
     if (projectContext == null) return;
 
     final ctx = StringBuffer();
@@ -121,6 +132,11 @@ class AgentService {
 
     messages.insert(
         1, Message(role: "system", content: ctx.toString()));
+
+    // Inject user profile
+    final profileCtx = await UserProfile.toContextPrompt();
+    messages.insert(
+        1, Message(role: "system", content: profileCtx));
   }
 
   /// Load saved session from disk
@@ -133,7 +149,7 @@ class AgentService {
         role: "system",
         content: _buildSystemPrompt(currentMode)));
     messages.addAll(saved);
-    _injectContext();
+    await _injectContext();
 
     final decisions =
         await SessionMemory.getDecisions(projectName);
@@ -220,9 +236,20 @@ You are in refactoring mode. Change structure, preserve behavior.
 - Ensure tests pass. Match existing conventions.
 - Never: add features while refactoring. Never refactor without reading code first.
 """,
+      AgentMode.research => """
+## MODE: DEEP RESEARCH
+You are in research mode. Investigate topics thoroughly.
+- Search the web for current information using web_search tool.
+- Fetch and read documentation with web_fetch tool.
+- Compare multiple sources. Note disagreements.
+- Synthesize findings into structured report.
+- Cite sources. Distinguish facts from opinions.
+- Output: Executive Summary → Key Findings → Detailed Analysis → Recommendations → Sources.
+""",
       AgentMode.auto => """
 ## MODE: AUTO
 Detect what the user needs and switch modes automatically.
+- "research...", "what is...", "compare...", "latest...", "best practices for..." → research
 - "how to...", "what if...", "design...", "ideas for..." → brainstorm
 - "plan...", "architecture...", "structure..." → architect
 - "write...", "add...", "create...", "implement..." → code
@@ -378,6 +405,65 @@ ${SkillKnowledge.all}
         },
       },
     },
+    {
+      "type": "function",
+      "function": {
+        "name": "web_search",
+        "description":
+            "Search the web for current information. Use for research, documentation lookups, comparing technologies, finding solutions. Returns titles, snippets, and URLs.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "Search query",
+            },
+            "max_results": {
+              "type": "integer",
+              "description": "Max results (1-10, default 5)",
+            },
+          },
+          "required": ["query"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "web_fetch",
+        "description":
+            "Fetch and read content from a URL. Use to read documentation, articles, or any web page. Returns extracted text.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "Full URL to fetch",
+            },
+          },
+          "required": ["url"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "impact_analysis",
+        "description":
+            "Analyze what files would be affected if a given file is changed. Shows direct and transitive dependents with risk level.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "project": {"type": "string"},
+            "file_path": {
+              "type": "string",
+              "description": "File path to analyze",
+            },
+          },
+          "required": ["project", "file_path"],
+        },
+      },
+    },
   ];
 
   void setMode(AgentMode mode) {
@@ -388,24 +474,51 @@ ${SkillKnowledge.all}
   AgentMode _detectMode(String userMessage) {
     final lower = userMessage.toLowerCase();
 
-    if (lower.contains("how ") && (lower.contains("design") || lower.contains("architecture") || lower.contains("structure") || lower.contains("plan"))) {
+    if (lower.contains("research") ||
+        lower.contains("what is") ||
+        lower.contains("compare") ||
+        lower.contains("latest") ||
+        lower.contains("best practice") ||
+        lower.contains("explain ") &&
+            !lower.contains("code")) {
+      return AgentMode.research;
+    }
+    if (lower.contains("how ") &&
+        (lower.contains("design") ||
+            lower.contains("architecture") ||
+            lower.contains("structure") ||
+            lower.contains("plan"))) {
       return AgentMode.architect;
     }
-    if (lower.contains(" how ") || lower.contains("what if") || lower.contains("brainstorm") || lower.contains("ideas") || lower.contains("suggest") || lower.contains("options")) {
-      if (!lower.contains("write") && !lower.contains("add") && !lower.contains("create") && !lower.contains("implement")) {
+    if (lower.contains(" how ") ||
+        lower.contains("what if") ||
+        lower.contains("brainstorm") ||
+        lower.contains("ideas") ||
+        lower.contains("suggest") ||
+        lower.contains("options")) {
+      if (!lower.contains("write") &&
+          !lower.contains("add") &&
+          !lower.contains("create") &&
+          !lower.contains("implement")) {
         return AgentMode.brainstorm;
       }
     }
-    if (lower.contains("fix") || lower.contains("bug") || lower.contains("broken") || lower.contains("error") || lower.contains("wrong") || lower.contains("debug") || lower.contains("trace")) {
+    if (lower.contains("fix") ||
+        lower.contains("bug") ||
+        lower.contains("broken") ||
+        lower.contains("error") ||
+        lower.contains("wrong") ||
+        lower.contains("debug") ||
+        lower.contains("trace")) {
       return AgentMode.debug;
     }
-    if (lower.contains("refactor") || lower.contains("clean") || lower.contains("restructure") || lower.contains("extract") || lower.contains("simplify")) {
+    if (lower.contains("refactor") ||
+        lower.contains("clean") ||
+        lower.contains("restructure") ||
+        lower.contains("extract") ||
+        lower.contains("simplify")) {
       return AgentMode.refactor;
     }
-    if (lower.contains("write") || lower.contains("add") || lower.contains("create") || lower.contains("implement") || lower.contains("build") || lower.contains("code") || lower.contains("generate")) {
-      return AgentMode.code;
-    }
-
     return AgentMode.code;
   }
 
@@ -452,6 +565,25 @@ ${SkillKnowledge.all}
           final gs = gitService;
           if (gs == null) return "Git not configured";
           return await gs.getStatus();
+        case "web_search":
+          final results = await ResearchService.search(
+              args["query"],
+              maxResults: args["max_results"] ?? 5);
+          if (results.isEmpty) return "No results found";
+          return results
+              .map((r) =>
+                  "${r.title}\n  ${r.snippet}\n  ${r.url}")
+              .join("\n\n");
+        case "web_fetch":
+          return await ResearchService.fetchUrl(args["url"]);
+        case "impact_analysis":
+          final impact = await CodeIntelligence.analyzeImpact(
+              args["project"], args["file_path"]);
+          return "Risk: ${impact.riskLevel}\n"
+              "Direct dependents (${impact.directDependents.length}):\n"
+              "${impact.directDependents.map((d) => "  - $d").join("\n")}\n"
+              "Transitive dependents (${impact.transitiveDependents.length}):\n"
+              "${impact.transitiveDependents.map((d) => "  - $d").join("\n")}";
         default:
           return "Unknown tool: $name";
       }
@@ -566,13 +698,13 @@ ${SkillKnowledge.all}
     saveSession();
   }
 
-  void reset() {
+  Future<void> reset() async {
     messages.clear();
     messages.add(Message(
         role: "system",
         content: _buildSystemPrompt(currentMode)));
     if (projectContext != null) {
-      _injectContext();
+      await _injectContext();
     }
   }
 }

@@ -7,6 +7,7 @@ import "../services/storage_service.dart";
 import "../services/session_memory.dart";
 import "../services/sync_service.dart";
 import "../services/offline_queue.dart";
+import "../services/user_profile.dart";
 import "file_browser_screen.dart";
 
 class ChatScreen extends StatefulWidget {
@@ -60,6 +61,8 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     await _agent.scanProject();
+    UserProfile.recordSession();
+    UserProfile.learnFromProject(widget.projectName);
     final hasSession = await _agent.loadSession();
 
     if (hasSession) {
@@ -76,7 +79,7 @@ class _ChatScreenState extends State<ChatScreen> {
         }
       }
     } else {
-      _agent.reset();
+      await _agent.reset();
       if (_agent.projectContext != null) {
         final ctx = _agent.projectContext!;
         _projectFiles =
@@ -156,6 +159,10 @@ class _ChatScreenState extends State<ChatScreen> {
         _setMode(AgentMode.brainstorm);
         return;
       }
+      if (cmd == "/research") {
+        _setMode(AgentMode.research);
+        return;
+      }
       if (cmd == "/architect") {
         _setMode(AgentMode.architect);
         return;
@@ -198,7 +205,7 @@ class _ChatScreenState extends State<ChatScreen> {
       if (cmd == "/clear" || cmd == "/reset") {
         await SessionMemory.clearMemory(
             widget.projectName);
-        _agent.reset();
+        await _agent.reset();
         setState(() {
           _messages.clear();
           _mode = AgentMode.auto;
@@ -208,7 +215,7 @@ class _ChatScreenState extends State<ChatScreen> {
       }
       if (cmd == "/help") {
         _addMessage("system",
-            "/brainstorm /architect /code /debug /refactor /auto\n"
+          "/brainstorm /architect /code /debug /refactor /research /auto\n"
             "/files — file browser\n"
             "/git — git status\n"
             "/sync — sync with PC\n"
@@ -264,6 +271,7 @@ class _ChatScreenState extends State<ChatScreen> {
         AgentMode.code => const Color(0xFF3FB950),
         AgentMode.debug => const Color(0xFFD2991D),
         AgentMode.refactor => const Color(0xFF58A6FF),
+        AgentMode.research => const Color(0xFF00BCD4),
         AgentMode.auto => const Color(0xFF8B949E),
       };
 
@@ -273,6 +281,7 @@ class _ChatScreenState extends State<ChatScreen> {
         AgentMode.code => "CODE",
         AgentMode.debug => "DEBUG",
         AgentMode.refactor => "REFACTOR",
+        AgentMode.research => "RESEARCH",
         AgentMode.auto => "AUTO",
       };
 
