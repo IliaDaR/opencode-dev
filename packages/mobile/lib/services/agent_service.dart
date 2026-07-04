@@ -43,6 +43,9 @@ class AgentService {
   AgentMode currentMode = AgentMode.auto;
   ProjectContext? projectContext;
 
+  void Function(String tool, String args)? onToolCall;
+  void Function(String tool, String args, String result)? onToolResult;
+
   AgentService({required this.projectName});
 
   void setGitService(GitService gs) {
@@ -464,6 +467,154 @@ ${SkillKnowledge.all}
         },
       },
     },
+    {
+      "type": "function",
+      "function": {
+        "name": "run_command",
+        "description":
+            "Execute a terminal command and return the output. Use for: running tests, typecheck, lint, build, npm/pip install, git commands beyond sync/status, or any shell operation.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "project": {"type": "string"},
+            "command": {
+              "type": "string",
+              "description": "Shell command to run",
+            },
+            "cwd": {
+              "type": "string",
+              "description":
+                  "Working directory relative to project root (optional)",
+            },
+          },
+          "required": ["project", "command"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "glob_files",
+        "description":
+            "Find files matching a glob pattern. Use to discover project structure. Example patterns: '**/*.ts', 'src/**/*.tsx', '*.json'.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "project": {"type": "string"},
+            "pattern": {
+              "type": "string",
+              "description": "Glob pattern",
+            },
+          },
+          "required": ["project", "pattern"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "edit_file",
+        "description":
+            "Edit specific lines in an existing file. Use instead of write_file when modifying existing code — preserves the rest of the file. Provide old_string (text to replace) and new_string (replacement).",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "project": {"type": "string"},
+            "path": {"type": "string"},
+            "old_string": {
+              "type": "string",
+              "description":
+                  "Exact text to find and replace",
+            },
+            "new_string": {
+              "type": "string",
+              "description": "Replacement text",
+            },
+          },
+          "required": [
+            "project",
+            "path",
+            "old_string",
+            "new_string"
+          ],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "create_tasks",
+        "description":
+            "Create a structured task list to track progress. Use for complex multi-step work. Provide list of tasks with statuses.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "tasks": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "content": {
+                    "type": "string",
+                    "description":
+                        "Task description",
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "pending",
+                      "in_progress",
+                      "completed",
+                      "cancelled"
+                    ],
+                  },
+                  "priority": {
+                    "type": "string",
+                    "enum": [
+                      "high",
+                      "medium",
+                      "low"
+                    ],
+                  },
+                },
+                "required": [
+                  "content",
+                  "status",
+                  "priority"
+                ],
+              },
+              "description": "List of tasks",
+            },
+          },
+          "required": ["tasks"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "ask_user",
+        "description":
+            "Ask the user a clarifying question when you need more information to proceed. Use when requirements are ambiguous or you need to choose between approaches.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "question": {
+              "type": "string",
+              "description":
+                  "The question to ask the user",
+            },
+            "options": {
+              "type": "array",
+              "items": {"type": "string"},
+              "description":
+                  "Suggested answer options (optional)",
+            },
+          },
+          "required": ["question"],
+        },
+      },
+    },
   ];
 
   void setMode(AgentMode mode) {
@@ -584,11 +735,140 @@ ${SkillKnowledge.all}
               "${impact.directDependents.map((d) => "  - $d").join("\n")}\n"
               "Transitive dependents (${impact.transitiveDependents.length}):\n"
               "${impact.transitiveDependents.map((d) => "  - $d").join("\n")}";
+        case "run_command":
+          return await _runShellCommand(
+              args["project"],
+              args["command"],
+              args["cwd"]);
+        case "glob_files":
+          return await _globSearch(
+              args["project"], args["pattern"]);
+        case "edit_file":
+          return await _editFile(
+              args["project"],
+              args["path"],
+              args["old_string"],
+              args["new_string"]);
+        case "create_tasks":
+          final tasks = args["tasks"] as List;
+          final buf = StringBuffer();
+          buf.writeln("## Task List\n");
+          for (final t in tasks) {
+            final icon = switch (t["status"]) {
+              "completed" => "✅",
+              "in_progress" => "🔄",
+              "cancelled" => "❌",
+              _ => "⏳",
+            };
+            buf.writeln(
+                "$icon [${t["priority"]}] ${t["content"]}");
+            buf.writeln();
+          }
+          return buf.toString();
+        case "ask_user":
+          final q = args["question"] as String;
+          final opts = args["options"] as List?;
+          if (opts != null && opts.isNotEmpty) {
+            return "❓ $q\n\nOptions: ${opts.join(", ")}";
+          }
+          return "❓ $q";
         default:
           return "Unknown tool: $name";
       }
     } catch (e) {
       return "Error: $e";
+    }
+  }
+
+  Future<String> _runShellCommand(
+      String project, String command,
+      [String? cwd]) async {
+    try {
+      final result = await Process.run(
+        Platform.isWindows ? "cmd" : "sh",
+        [
+          Platform.isWindows ? "/c" : "-c",
+          command,
+        ],
+        workingDirectory: cwd != null
+            ? "${StorageService.projectsRoot.path}/$project/$cwd"
+            : "${StorageService.projectsRoot.path}/$project",
+        runInShell: true,
+      );
+      final out = (result.stdout as String).trim();
+      final err = (result.stderr as String).trim();
+      if (out.isEmpty && err.isEmpty) {
+        return "(completed, no output)";
+      }
+      if (err.isNotEmpty && out.isEmpty) {
+        return err;
+      }
+      if (err.isNotEmpty) {
+        return "$out\n$err";
+      }
+      return out;
+    } catch (e) {
+      return "Command failed: $e";
+    }
+  }
+
+  Future<String> _globSearch(
+      String project, String pattern) async {
+    final results = <String>[];
+    final regex = _globToRegex(pattern);
+
+    Future<void> scanDir(String path) async {
+      final entries =
+          await StorageService.listDir(project, path);
+      for (final entry in entries) {
+        final name = entry.uri.pathSegments.last;
+        final fullPath =
+            path.isEmpty ? name : "$path/$name";
+        if (name.startsWith(".") &&
+            name != ".gitignore") continue;
+        if (entry is Directory) {
+          if (name != "node_modules" &&
+              name != "dist" &&
+              name != ".git") {
+            await scanDir(fullPath);
+          }
+        } else {
+          if (regex.hasMatch(fullPath)) {
+            results.add(fullPath);
+            if (results.length >= 50) return;
+          }
+        }
+      }
+    }
+
+    await scanDir("");
+    return results.isEmpty
+        ? "No files matched $pattern"
+        : results.join("\n");
+  }
+
+  static RegExp _globToRegex(String pattern) {
+    var escaped = RegExp.escape(pattern);
+    escaped = escaped.replaceAll(r'\*\*', '<<DEEP>>');
+    escaped = escaped.replaceAll(r'\*', r'[^/]*');
+    escaped = escaped.replaceAll('<<DEEP>>', '.*');
+    return RegExp('^$escaped\$');
+  }
+
+  Future<String> _editFile(String project, String path,
+      String oldStr, String newStr) async {
+    try {
+      final content =
+          await StorageService.readFile(project, path);
+      if (!content.contains(oldStr)) {
+        return "Error: old_string not found in $path. Read the file first to get the exact text.";
+      }
+      final updated = content.replaceFirst(oldStr, newStr);
+      await StorageService.writeFile(
+          project, path, updated);
+      return "Edited $path — 1 replacement made";
+    } catch (e) {
+      return "Edit failed: $e";
     }
   }
 
@@ -677,8 +957,13 @@ ${SkillKnowledge.all}
               : argsStr;
           yield "\n[🔧 $toolName] $preview\n";
 
+          onToolCall?.call(toolName, preview);
+
           final result =
               await _executeTool(toolName, toolArgs);
+
+          onToolResult?.call(toolName, preview, result);
+
           yield result;
 
           messages.add(Message(
