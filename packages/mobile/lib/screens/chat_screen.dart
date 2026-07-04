@@ -245,7 +245,7 @@ class _ChatScreenState extends State<ChatScreen> {
     } catch (e) {
       _addMessage("error", "Error: $e");
       await OfflineQueue.enqueue(
-          widget.projectName, "send_message", {"text": text});
+          widget.projectName, "send_message", data: {"text": text});
       setState(() => _offlineCount++);
     }
     setState(() => _loading = false);
