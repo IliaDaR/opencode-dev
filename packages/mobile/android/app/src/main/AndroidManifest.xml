@@ -3,8 +3,7 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="OpenCode"
-        android:name="${applicationName}"
-        android:icon="@android:drawable/sym_def_app_icon">
+        android:name="${applicationName}">
         <activity
             android:name=".MainActivity"
             android:exported="true"
