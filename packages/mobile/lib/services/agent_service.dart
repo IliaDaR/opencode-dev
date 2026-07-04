@@ -1472,16 +1472,17 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
               .suggestOptimizations(args["code"]);
         // Project management
         case "estimate_effort":
-          return ProjectService.estimateEffort(
+          return DocumentationService.estimateEffort(
               args["description"]);
         case "generate_readme":
-          return ProjectService.generateReadmeTemplate(
+          return DocumentationService.generateReadmeTemplate(
               args["project_name"],
               args["description"],
               args["tech_stack"]);
         case "generate_api_docs":
-          return await ProjectService.generateApiDocs(
-              args["project"], args["source_file"]);
+          return await DocumentationService
+              .generateApiDocs(args["project"],
+                  args["source_file"]);
         default:
           return "Unknown tool: $name";
       }

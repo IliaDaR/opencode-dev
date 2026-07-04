@@ -30,7 +30,7 @@ class ResearchService {
       });
       final response = await http.get(uri,
           headers: {"User-Agent": "OpenCode-Mobile/1.0"});
-      if (response.statusCode != 200) return _fallbackSearch(query);
+      if (response.statusCode != 200) return await _fallbackSearch(query);
 
       final data = jsonDecode(response.body);
       final results = <SearchResult>[];
@@ -55,7 +55,7 @@ class ResearchService {
       }
       return results;
     } catch (_) {
-      return _fallbackSearch(query);
+      return await _fallbackSearch(query);
     }
   }
 
@@ -73,7 +73,7 @@ class ResearchService {
       }).timeout(const Duration(seconds: 10));
 
       if (response.statusCode != 200) {
-        return _fallbackSearch(query);
+        return await _fallbackSearch(query);
       }
 
       final results = <SearchResult>[];
@@ -110,9 +110,9 @@ class ResearchService {
         }
       }
 
-      return results.isEmpty ? _fallbackSearch(query) : results;
+      return results.isEmpty ? await _fallbackSearch(query) : results;
     } catch (_) {
-      return _fallbackSearch(query);
+      return await _fallbackSearch(query);
     }
   }
 
