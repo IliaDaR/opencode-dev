@@ -7,10 +7,20 @@ import "session_memory.dart";
 /// Web research — fetch docs, search, analyze
 class ResearchService {
   static const _ddgApi = "https://api.duckduckgo.com/";
+  static const _yandexApi = "https://yandex.com/search/xml";
 
-  /// Search the web and return results
+  /// Search the web using DuckDuckGo
   static Future<List<SearchResult>> search(String query,
-      {int maxResults = 5}) async {
+      {int maxResults = 5, String engine = "duckduckgo"}) async {
+    if (engine == "yandex") {
+      return _searchYandex(query, maxResults: maxResults);
+    }
+    return _searchDuckDuckGo(query, maxResults: maxResults);
+  }
+
+  /// DuckDuckGo Instant Answer API
+  static Future<List<SearchResult>> _searchDuckDuckGo(
+      String query, {int maxResults = 5}) async {
     try {
       final uri = Uri.parse(_ddgApi).replace(queryParameters: {
         "q": query,
@@ -18,13 +28,9 @@ class ResearchService {
         "no_html": "1",
         "skip_disambig": "1",
       });
-
-      final response =
-          await http.get(uri, headers: {"User-Agent": "OpenCode-Mobile/1.0"});
-
-      if (response.statusCode != 200) {
-        return _fallbackSearch(query);
-      }
+      final response = await http.get(uri,
+          headers: {"User-Agent": "OpenCode-Mobile/1.0"});
+      if (response.statusCode != 200) return _fallbackSearch(query);
 
       final data = jsonDecode(response.body);
       final results = <SearchResult>[];
@@ -32,28 +38,98 @@ class ResearchService {
       if (data["AbstractText"] != null &&
           (data["AbstractText"] as String).isNotEmpty) {
         results.add(SearchResult(
-          title: data["Heading"] ?? query,
-          snippet: data["AbstractText"],
-          url: data["AbstractURL"] ?? "",
-        ));
+            title: data["Heading"] ?? query,
+            snippet: data["AbstractText"],
+            url: data["AbstractURL"] ?? ""));
       }
-
       if (data["RelatedTopics"] != null) {
-        for (final topic in data["RelatedTopics"].take(maxResults)) {
+        for (final topic
+            in (data["RelatedTopics"] as List).take(maxResults)) {
           if (topic is Map && topic["Text"] != null) {
             results.add(SearchResult(
-              title: topic["FirstURL"]?.split("/").last ?? "",
-              snippet: topic["Text"],
-              url: topic["FirstURL"] ?? "",
-            ));
+                title: topic["FirstURL"]?.split("/").last ?? "",
+                snippet: topic["Text"],
+                url: topic["FirstURL"] ?? ""));
           }
         }
       }
-
       return results;
     } catch (_) {
       return _fallbackSearch(query);
     }
+  }
+
+  /// Yandex search — great for Russian-language and CIS region queries
+  static Future<List<SearchResult>> _searchYandex(
+      String query, {int maxResults = 5}) async {
+    try {
+      // Use Yandex's HTML search page as fallback (no API key needed)
+      final uri = Uri.parse("https://yandex.com/search/").replace(
+          queryParameters: {"text": query, "lr": "2"});
+      final response = await http.get(uri, headers: {
+        "User-Agent":
+            "Mozilla/5.0 (Linux; Android 14) OpenCode-Mobile/1.0",
+        "Accept": "text/html",
+      }).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode != 200) {
+        return _fallbackSearch(query);
+      }
+
+      final results = <SearchResult>[];
+      // Extract search results from HTML
+      final resultRegex = RegExp(
+          r'<a[^>]*class="[^"]*link[^"]*"[^>]*href="([^"]+)"[^>]*>.*?<span[^>]*class="[^"]*organic__title[^"]*"[^>]*>(.*?)</span>',
+          dotAll: true,
+          caseSensitive: false);
+
+      for (final m
+          in resultRegex.allMatches(response.body).take(maxResults)) {
+        final url = m.group(1) ?? "";
+        final title = _stripTags(_decodeHtml(m.group(2) ?? ""));
+        if (url.isNotEmpty && title.isNotEmpty) {
+          results.add(SearchResult(
+              title: title, snippet: url, url: url));
+        }
+      }
+
+      if (results.isEmpty) {
+        // Fallback: simpler extraction
+        final linkRegex = RegExp(
+            r'<a[^>]*href="(https?://[^"]+)"[^>]*>([^<]+)</a>');
+        for (final m
+            in linkRegex.allMatches(response.body).take(maxResults)) {
+          final url = m.group(1) ?? "";
+          final title = _stripTags(_decodeHtml(m.group(2) ?? ""));
+          if (url.isNotEmpty &&
+              title.isNotEmpty &&
+              !url.contains("yandex.")) {
+            results.add(SearchResult(
+                title: title, snippet: url, url: url));
+          }
+        }
+      }
+
+      return results.isEmpty ? _fallbackSearch(query) : results;
+    } catch (_) {
+      return _fallbackSearch(query);
+    }
+  }
+
+  static String _stripTags(String html) {
+    return html
+        .replaceAll(RegExp(r'<[^>]+>'), "")
+        .replaceAll(RegExp(r'\s+'), " ")
+        .trim();
+  }
+
+  static String _decodeHtml(String html) {
+    return html
+        .replaceAll("&amp;", "&")
+        .replaceAll("&lt;", "<")
+        .replaceAll("&gt;", ">")
+        .replaceAll("&quot;", '"')
+        .replaceAll("&#39;", "'");
   }
 
   /// Fallback: use Google's "I'm Feeling Lucky" redirect info

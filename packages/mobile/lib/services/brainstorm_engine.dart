@@ -1,53 +1,52 @@
-/// Brainstorm engine — generates novel, non-obvious ideas by combining unrelated concepts.
-/// Uses lateral thinking techniques: inversion, analogy, constraint removal, combination.
+/// Brainstorm engine — 18 lateral thinking techniques
 class BrainstormEngine {
   static final List<String> _techniques = [
-    "INVERSION: What if we did the opposite? Reverse the flow, flip the assumption.",
-    "ANALOGY: What does this resemble from another domain? Biology? Physics? Games?",
-    "CONSTRAINT_REMOVAL: What if we had unlimited budget/time/users? Then scale back.",
-    "COMBINATION: What if we merged this with an unrelated concept? AI + farming? Code + music?",
-    "EXTREME: What's the most extreme version? The simplest? The most complex?",
-    "FIRST_PRINCIPLES: Strip assumptions. What's the fundamental problem?",
-    "USER_OBSESSION: What would make users cry with joy? What's their deepest frustration?",
-    "FUTURE_BACK: Fast-forward 5 years. What does the solution look like? Work backwards.",
+    "INVERSION: Reverse the flow. Flip the assumption. What if we did the opposite?",
+    "ANALOGY: What does this resemble from biology? Physics? Games? Music? Military?",
+    "CONSTRAINT_REMOVAL: Unlimited budget/time/users. Then scale back to reality.",
+    "COMBINATION: Merge with unrelated concept. AI + farming? Code + cooking? Blockchain + dating?",
+    "EXTREME: Most extreme version? Simplest? Most complex? Fastest? Slowest?",
+    "FIRST_PRINCIPLES: Strip ALL assumptions. What's the fundamental problem beneath?",
+    "USER_OBSESSION: What makes users cry with joy? Their deepest unspoken frustration?",
+    "FUTURE_BACK: Fast-forward 5 years. What exists then? Work backwards to today.",
+    "RANDOM_STIMULUS: Open dictionary on random word. How does it connect to the problem?",
+    "PROVOCATION: Make absurd statement. 'Code writes itself.' Extract the useful kernel.",
+    "SCAMPER: Substitute, Combine, Adapt, Modify, Put to another use, Eliminate, Reverse.",
+    "SIX_HATS: White(facts), Red(emotions), Black(risks), Yellow(benefits), Green(creativity), Blue(process).",
+    "TRIZ: 40 inventive principles. Key: segmentation, asymmetry, merging, universality, nesting.",
+    "BIOMIMICRY: How does nature solve this? Ant colonies? Bee hives? Evolution? Neural nets?",
+    "CONTRADICTION: Identify contradiction (want X and not-X). Resolve, don't compromise.",
+    "BLUE_OCEAN: Eliminate, Reduce, Raise, Create. Remove what industry takes for granted.",
+    "JOBS_TO_BE_DONE: What 'job' is the user hiring this product for? Not features — the progress.",
+    "PRETOTYPE: What's the FAKEST version testing the core assumption? Fake before you build.",
   ];
 
-  /// Generate novel ideas for a problem
   static List<String> generateIdeas(String problem, int count) {
     final ideas = <String>[];
-
     for (var i = 0; i < count; i++) {
-      final technique = _techniques[i % _techniques.length];
-      ideas.add("$technique\n\nConsider: $problem\n\nWhat novel solution emerges?");
+      ideas.add("${_techniques[i % _techniques.length]}\n\nConsider: $problem\n\nWhat novel solution emerges?");
     }
-
     return ideas;
   }
 
-  /// Get a brainstorming prompt for the agent
   static String get prompt => """
-## CREATIVE IDEATION MODE
+## CREATIVE IDEATION
 
-When asked to generate ideas, you MUST use lateral thinking techniques. Do NOT suggest obvious solutions. Do NOT Google the answer. Think differently.
+Use lateral thinking. Do NOT suggest obvious solutions.
 
-### Techniques to apply (rotate through them):
+### Techniques:
 ${_techniques.map((t) => "- $t").join("\n")}
 
-### Rules for Idea Generation:
-1. Every idea must be NOVEL — if it exists on Google, it's not novel enough
-2. Combine unrelated domains: "What would a chef do? A musician? A biologist?"
-3. Challenge assumptions: list 3 assumptions about the problem, then violate each one
-4. Extreme thinking: what if cost was zero? What if users were infinite? What if time stopped?
-5. Cross-pollinate: take a solution from one industry and apply it here
+### Rules:
+1. Every idea NOVEL — if it's on Google, it's not novel enough.
+2. Combine unrelated domains. Challenge 3 assumptions, violate each.
+3. Minimum 3 ideas. Never fewer. Push beyond obvious.
 
-### Output Format:
-For each idea, provide:
-- **Idea Name** (catchy, 2-4 words)
-- **Core Insight** (the non-obvious realization)
-- **How It Works** (2-3 sentences)
-- **Why It's Novel** (what makes it different from existing solutions)
-- **Risks/Challenges** (honest assessment)
-
-Generate at least 3 ideas. Never fewer. Push beyond the obvious.
+### Output per idea:
+**Idea N: [Catchy Name]**
+- Core Insight: [non-obvious realization]
+- How: [2-3 sentences]
+- Why Novel: [different from existing]
+- Risks: [honest challenges]
 """;
 }
