@@ -313,9 +313,26 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           if (_offlineCount > 0)
             IconButton(
-              icon: Badge(
-                label: Text("$_offlineCount"),
-                child: const Icon(Icons.cloud_off, size: 20),
+              icon: Stack(
+                children: [
+                  const Icon(Icons.cloud_off, size: 20),
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD2991D),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text("$_offlineCount",
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
               ),
               tooltip: "Offline queue",
               onPressed: () {
