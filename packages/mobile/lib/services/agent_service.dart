@@ -6,6 +6,8 @@ import "git_service.dart";
 import "github_service.dart";
 import "browser_service.dart";
 import "sql_service.dart";
+import "lsp_service.dart";
+import "sub_agent_service.dart";
 import "skills.dart";
 import "session_memory.dart";
 import "research_service.dart";
@@ -920,17 +922,93 @@ ${SkillKnowledge.all}
       "function": {
         "name": "suggest_tests",
         "description":
-            "Analyze a source file and suggest what tests should be written. Doesn't write tests — suggests test cases based on the code's logic.",
+            "Analyze a source file and suggest what tests should be written.",
         "parameters": {
           "type": "object",
           "properties": {
             "project": {"type": "string"},
-            "file_path": {
-              "type": "string",
-              "description": "Source file to analyze",
-            },
+            "file_path": {"type": "string"},
           },
           "required": ["project", "file_path"],
+        },
+      },
+    },
+    // LSP / Diagnostics tools
+    {
+      "type": "function",
+      "function": {
+        "name": "diagnose_file",
+        "description":
+            "Analyze a file for code quality issues: any types, missing imports, security risks, anti-patterns, TODO comments. Returns diagnostics with line numbers.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "project": {"type": "string"},
+            "file_path": {"type": "string"},
+          },
+          "required": ["project", "file_path"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "analyze_project",
+        "description":
+            "Scan the entire project for code quality issues across all source files. Returns summary with top issues per file.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "project": {"type": "string"},
+          },
+          "required": ["project"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "check_imports",
+        "description":
+            "Verify that all relative imports in a file reference real files. Finds broken imports.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "project": {"type": "string"},
+            "file_path": {"type": "string"},
+          },
+          "required": ["project", "file_path"],
+        },
+      },
+    },
+    // Multi-agent delegation
+    {
+      "type": "function",
+      "function": {
+        "name": "delegate_task",
+        "description":
+            "Delegate a task to a specialized sub-agent. Uses parallel API calls for complex multi-step work. Agent types: architect (plan/design), scribe (write code), debugger (find bugs), reviewer (code review), refactor (restructure), researcher (investigate).",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "agent_type": {
+              "type": "string",
+              "enum": [
+                "architect",
+                "scribe",
+                "debugger",
+                "reviewer",
+                "refactor",
+                "researcher"
+              ],
+            },
+            "task": {
+              "type": "string",
+              "description":
+                  "Detailed task description with file paths and constraints",
+            },
+          },
+          "required": ["agent_type", "task"],
         },
       },
     },
@@ -1150,6 +1228,20 @@ ${SkillKnowledge.all}
         case "suggest_tests":
           return await _suggestTests(
               args["project"], args["file_path"]);
+        // LSP tools
+        case "diagnose_file":
+          return await LspService.diagnoseFile(
+              args["project"], args["file_path"]);
+        case "analyze_project":
+          return await LspService.analyzeProject(
+              args["project"]);
+        case "check_imports":
+          return await LspService.checkImports(
+              args["project"], args["file_path"]);
+        // Multi-agent
+        case "delegate_task":
+          return await SubAgentService.delegate(
+              args["agent_type"], args["task"]);
         default:
           return "Unknown tool: $name";
       }
