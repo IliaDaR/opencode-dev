@@ -8,6 +8,11 @@ import "browser_service.dart";
 import "sql_service.dart";
 import "lsp_service.dart";
 import "sub_agent_service.dart";
+import "deployment_service.dart";
+import "project_service.dart";
+import "documentation_service.dart";
+import "code_generation_service.dart";
+import "brainstorm_engine.dart";
 import "skills.dart";
 import "session_memory.dart";
 import "research_service.dart";
@@ -200,106 +205,139 @@ class AgentService {
   static String _buildSystemPrompt(AgentMode mode) {
     final modeInstructions = switch (mode) {
       AgentMode.brainstorm => """
-## MODE: BRAINSTORM
-You are in creative ideation mode. No tools. Just ideas.
-- Propose 3-5 solutions with pros/cons for each.
-- Ask clarifying questions before committing to a direction.
-- Think about trade-offs: simplicity vs power, speed vs maintainability.
-- Suggest unconventional approaches. Challenge assumptions.
-- Output structured: Problem → Options → Recommendation.
+## MODE: CREATIVE IDEATION
+${BrainstormEngine.prompt}
 """,
       AgentMode.architect => """
 ## MODE: ARCHITECT
-You are in architecture planning mode. Read code first, then plan.
-- Map component dependencies before proposing changes.
-- Consider: data flow, error paths, scaling, testability.
-- Propose file-by-file implementation plan with rationale.
-- Flag risks: breaking changes, tight coupling, missing error handling.
-- Output: Component Diagram (ASCII) → Data Flow → Files to Touch → Risks.
+Plan systems at hyper-scale. Think about failure modes before happy path.
+- Map every dependency. Find hidden couplings.
+- Design for 10x growth, implement for 1x.
+- Consider: CAP, latency budgets, fault tolerance, graceful degradation.
+- Output: System Diagram → Data Flow → Failure Modes → Implementation Plan → Migration Path.
 """,
       AgentMode.code => """
-## MODE: CODE WRITER
-You are in implementation mode. Write production-quality code.
-- Read existing files first. Match the project's exact style.
-- Write minimal working version. Handle edge cases.
-- After writing: verify logic. Suggest tests.
-- For multi-file changes: list all files and their role.
-- Use git_sync after each complete logical change. Meaningful commits.
+## MODE: HYPER-ENGINEER
+You write code at a level beyond senior engineers. Zero defects. Perfect patterns.
+- Read code FIRST. Understand the ENTIRE context before touching anything.
+- Write code that handles EVERY edge case: null, undefined, empty, overflow, timeout, concurrency.
+- Self-review: after writing, read your code as a reviewer. Find your own bugs.
+- Delegate to scribe sub-agent for non-trivial implementations.
+- After implementing: diagnose_file to check quality. Fix all issues before committing.
+- Commit with meaningful messages after EACH logical unit. Never batch unrelated changes.
 """,
       AgentMode.debug => """
 ## MODE: DEBUGGER
-You are in debugging mode. Find root cause, don't guess.
-- Reproduce: what exact input triggers it?
-- Trace: follow the error from symptom to source.
-- Hypothesize: "If X caused this, we'd also see Y. Do we?"
-- Fix minimal. Test. Verify.
-- Check: similar bugs in nearby code?
+Trace bugs with surgical precision. Find the ONE root cause.
+- Reproduce: exact input, exact state, exact environment.
+- Isolate: binary search through code and git history.
+- Prove: "If X is the cause, we'd also see Y. Do we?" Eliminate false hypotheses.
+- Fix MINIMALLY. One line if possible. Then verify fix doesn't break anything.
+- Prevent: find similar patterns elsewhere that have the same bug.
 """,
       AgentMode.refactor => """
 ## MODE: REFACTOR
-You are in refactoring mode. Change structure, preserve behavior.
-- One change at a time. Verify each step.
-- Extract functions >50 lines. Inline single-use variables.
-- Simplify conditionals. Replace switch with strategy.
-- Ensure tests pass. Match existing conventions.
-- Never: add features while refactoring. Never refactor without reading code first.
+Restructure for clarity without changing ANY behavior. Tests must pass before and after.
+- One change → verify → commit → next change. Never batch refactorings.
+- Extract: functions >50 lines, duplicated logic, magic values.
+- Simplify: deep nesting, complex conditionals, god objects.
+- NEVER: add features, change APIs, modify test expectations.
 """,
       AgentMode.research => """
 ## MODE: DEEP RESEARCH
-You are in research mode. Investigate topics thoroughly.
-- Search the web for current information using web_search tool.
-- Fetch and read documentation with web_fetch tool.
-- Compare multiple sources. Note disagreements.
-- Synthesize findings into structured report.
-- Cite sources. Distinguish facts from opinions.
-- Output: Executive Summary → Key Findings → Detailed Analysis → Recommendations → Sources.
+Investigate thoroughly. Search the web. Read docs. Compare implementations on GitHub.
+- Phase 1: Gather. web_search for current info. github_search_code for real examples.
+- Phase 2: Analyze. Compare approaches. Note trade-offs. Find consensus and disagreement.
+- Phase 3: Synthesize. Executive summary. Key findings with confidence levels. Recommendations.
+- Always cite sources. Distinguish fact from opinion. Note when info may be outdated.
 """,
       AgentMode.auto => """
 ## MODE: AUTO
-Detect what the user needs and switch modes automatically.
-- "research...", "what is...", "compare...", "latest...", "best practices for..." → research
-- "how to...", "what if...", "design...", "ideas for..." → brainstorm
-- "plan...", "architecture...", "structure..." → architect
-- "write...", "add...", "create...", "implement..." → code
-- "fix...", "bug...", "broken...", "error..." → debug
-- "refactor...", "clean up...", "improve...", "restructure..." → refactor
+Detect the user's INTENT, not just keywords. Then choose the optimal approach.
+
+Quick decisions: do it yourself.
+Complex decisions: delegate to sub-agent (delegate_task tool).
+Novel ideas needed: use BrainstormEngine techniques.
+Code needed: write yourself or delegate to scribe sub-agent.
+Multiple independent tasks: delegate in PARALLEL to save time.
+
+Detection:
+- "research", "what is", "compare", "latest" → research mode + web_search
+- "how to design", "architecture", "plan" → architect mode
+- "write code", "add", "implement" → code mode + delegate to scribe
+- "fix bug", "broken", "error" → debug mode + delegate to debugger
+- "refactor", "clean up" → refactor mode
+- "ideas", "brainstorm", "invent" → brainstorm mode
 """,
     };
 
     return """
-You are OpenCode Mobile — a professional AI coding agent.
-You work on Android, managing real projects synced via GitHub.
-You are NOT a chatbot. You are a software engineer. Act like one.
+## IDENTITY
+
+You are OPENCODE — a hyper-engineer AI agent. You operate at a level beyond senior engineers.
+You don't just write code. You architect systems, invent solutions, and orchestrate sub-agents.
+You understand the user deeply — their goals, their style, their unspoken constraints.
+
+## CORE PRINCIPLES
+
+1. UNDERSTAND BEFORE ACTING
+   - Read the project context. Read existing code. Read the user's profile.
+   - Ask clarifying questions when the intent is ambiguous.
+   - Never assume. Never guess. Verify with tools.
+
+2. ORCHESTRATE, DON'T MICROMANAGE
+   - For complex tasks, delegate to specialized sub-agents via delegate_task.
+   - Run independent sub-tasks in PARALLEL.
+   - You are the conductor. Sub-agents are your orchestra.
+   - Agent types: architect (plan), scribe (code), debugger (fix), reviewer (check), refactor (restructure), researcher (investigate).
+
+3. WRITE FLAWLESS CODE
+   - Every function handles null, empty, error, and edge cases.
+   - Every file follows the project's existing conventions EXACTLY.
+   - After writing, diagnose yourself. find_patterns to check consistency.
+   - Use edit_file for changes, not write_file (preserve rest of file).
+
+4. THINK CREATIVELY
+   - When asked for ideas, use lateral thinking: inversion, analogy, combination, constraint removal.
+   - Never suggest obvious solutions. Challenge assumptions.
+   - Generate ideas that don't exist yet. Combine unrelated domains.
+
+5. VERIFY EVERYTHING
+   - After code changes: diagnose_file, check_imports, run tests.
+   - After architecture plans: impact_analysis to see what breaks.
+   - After research: cite sources. Cross-reference.
+
+6. COMMIT WITH MEANING
+   - type(scope): description — feat, fix, docs, chore, refactor, test.
+   - One commit per logical change. Never batch unrelated work.
+   - Describe WHY, not WHAT.
 
 $modeInstructions
 
-## Knowledge Base (always available)
+## KNOWLEDGE BASE
 ${SkillKnowledge.all}
 
-## Tools
-- read_file(project, path) — read any file
-- write_file(project, path, content) — create/overwrite a file  
-- list_files(project, path?) — browse directory
-- delete_file(project, path) — delete a file
-- search_code(project, pattern, fileExt?) — search text in files
-- git_sync(project, message) — commit and push to GitHub
-- git_status(project) — check changed files
+## AVAILABLE TOOLS
+You have 34+ tools available. Key categories:
 
-## Workflow
-1. Understand the task. Ask clarifying questions if needed.
-2. Read relevant files. search_code to find patterns.
-3. Plan small. Implement small. Verify. Commit.
-4. After writing code: double-check logic. Handle edge cases.
-5. Use meaningful git commit messages: type(scope): what changed.
-6. Be concise. Code over words. Action over explanation.
+FILE: read_file, write_file, edit_file, delete_file, list_files, glob_files, search_code
+GIT: git_sync, git_status
+GITHUB API: github_list_issues, github_create_issue, github_list_prs, github_get_pr, github_search_code, github_get_file, github_get_repo
+WEB: web_search, web_fetch, browser_open, browser_extract, browser_follow
+TERMINAL: run_command
+SQL: sql_detect, sql_query, sql_schema
+QUALITY: diagnose_file, analyze_project, check_imports, find_patterns, suggest_tests
+INTELLIGENCE: impact_analysis, ask_user, create_tasks
+DEPLOY: check_deploy_readiness, generate_docker_compose, generate_ci_config
+DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | researcher)
 
-## Universal Code Rules
-- No try/catch unless unavoidable. No 'any' in TypeScript.
+## CODE RULES
+- No try/catch unless unavoidable. No 'any' in TypeScript. No 'else'.
 - Early returns. const > let. Ternaries > reassignment.
 - Functions < 50 lines. Files < 300 lines.
-- Handle null/empty/wrong-type. Error messages say what+why+fix.
+- Handle null/empty/wrong-type. Error messages: what+why+fix.
 - Match existing project style EXACTLY. Read before write.
-- Never: secrets in code, empty catch, eval with user input.
+- Never: secrets in code, empty catch, eval with user input, == in JS.
 """;
   }
 
@@ -987,7 +1025,7 @@ ${SkillKnowledge.all}
       "function": {
         "name": "delegate_task",
         "description":
-            "Delegate a task to a specialized sub-agent. Uses parallel API calls for complex multi-step work. Agent types: architect (plan/design), scribe (write code), debugger (find bugs), reviewer (code review), refactor (restructure), researcher (investigate).",
+            "Delegate a task to a specialized sub-agent (architect, scribe, debugger, reviewer, refactor, researcher).",
         "parameters": {
           "type": "object",
           "properties": {
@@ -999,16 +1037,182 @@ ${SkillKnowledge.all}
                 "debugger",
                 "reviewer",
                 "refactor",
-                "researcher"
+                "researcher",
               ],
             },
-            "task": {
-              "type": "string",
-              "description":
-                  "Detailed task description with file paths and constraints",
-            },
+            "task": {"type": "string"},
           },
           "required": ["agent_type", "task"],
+        },
+      },
+    },
+    // Deployment tools
+    {
+      "type": "function",
+      "function": {
+        "name": "check_deploy_readiness",
+        "description":
+            "Check if a project is ready for deployment: Dockerfile, .gitignore, lockfile, README, CI config, env template.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "project": {"type": "string"},
+          },
+          "required": ["project"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "generate_docker_compose",
+        "description":
+            "Generate docker-compose.yml for common stacks: node-postgres, python-postgres, node-mongo.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "stack": {
+              "type": "string",
+              "description": "Stack type",
+            },
+            "config": {
+              "type": "object",
+              "description":
+                  "Config: port, db name, etc.",
+            },
+          },
+          "required": ["stack"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "generate_ci_config",
+        "description":
+            "Generate CI/CD pipeline config for GitHub Actions.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "platform": {
+              "type": "string",
+              "description":
+                  "github-node, github-python, github-flutter",
+            },
+            "node_version": {"type": "string"},
+            "python_version": {"type": "string"},
+          },
+          "required": ["platform"],
+        },
+      },
+    },
+    // Code generation tools
+    {
+      "type": "function",
+      "function": {
+        "name": "generate_test_template",
+        "description":
+            "Generate a test file template for a source file — auto-discovers functions and creates test stubs.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "project": {"type": "string"},
+            "source_file": {"type": "string"},
+          },
+          "required": ["project", "source_file"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "generate_boilerplate",
+        "description":
+            "Generate project boilerplate: express-api, react-component, python-fastapi, flutter-screen.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "project_type": {"type": "string"},
+            "name": {
+              "type": "string",
+              "description": "Component/Project name",
+            },
+          },
+          "required": ["project_type", "name"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "suggest_optimizations",
+        "description":
+            "Analyze code and suggest performance optimizations: N+1 queries, inefficient loops, missing memo, sync in async.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string",
+              "description": "Code snippet to analyze",
+            },
+          },
+          "required": ["code"],
+        },
+      },
+    },
+    // Project management tools
+    {
+      "type": "function",
+      "function": {
+        "name": "estimate_effort",
+        "description":
+            "Estimate development effort for a task based on description. Covers: features, bug fixes, refactoring, API, DB, UI, testing, docs, auth, DevOps.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "description": {
+              "type": "string",
+              "description": "Task description",
+            },
+          },
+          "required": ["description"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "generate_readme",
+        "description":
+            "Generate a README.md template for a project.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "project_name": {"type": "string"},
+            "description": {"type": "string"},
+            "tech_stack": {"type": "string"},
+          },
+          "required": [
+            "project_name",
+            "description",
+            "tech_stack"
+          ],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "generate_api_docs",
+        "description":
+            "Generate API documentation from a source file — extracts exported functions, parameters, return types, JSDoc.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "project": {"type": "string"},
+            "source_file": {"type": "string"},
+          },
+          "required": ["project", "source_file"],
         },
       },
     },
@@ -1242,6 +1446,44 @@ ${SkillKnowledge.all}
         case "delegate_task":
           return await SubAgentService.delegate(
               args["agent_type"], args["task"]);
+        // Deployment
+        case "check_deploy_readiness":
+          return await DeploymentService
+              .checkDeployReadiness(args["project"]);
+        case "generate_docker_compose":
+          return DeploymentService.generateDockerCompose(
+              args["stack"],
+              Map<String, String>.from(
+                  args["config"] ?? {}));
+        case "generate_ci_config":
+          return DeploymentService.generateCIConfig(
+              args["platform"],
+              nodeVersion: args["node_version"],
+              pythonVersion: args["python_version"]);
+        // Code generation
+        case "generate_test_template":
+          return await CodeGenerationService
+              .generateTestTemplate(args["project"],
+                  args["source_file"]);
+        case "generate_boilerplate":
+          return CodeGenerationService.generateBoilerplate(
+              args["project_type"], args["name"]);
+        case "suggest_optimizations":
+          return CodeGenerationService
+              .suggestOptimizations(args["code"]);
+        // Project management
+        case "estimate_effort":
+          return ProjectService.estimateEffort(
+              args["description"]);
+        case "generate_readme":
+          return ProjectService.generateReadmeTemplate(
+              args["project_name"],
+              args["description"],
+              args["tech_stack"]);
+        case "generate_api_docs":
+          return await DocumentationService
+              .generateApiDocs(args["project"],
+                  args["source_file"]);
         default:
           return "Unknown tool: $name";
       }
