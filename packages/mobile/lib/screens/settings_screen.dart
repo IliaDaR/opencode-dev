@@ -5,13 +5,18 @@ class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
+  State<SettingsScreen> createState() {
+    return _SettingsScreenState();
+  }
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  final _deepseekCtrl = TextEditingController();
-  final _githubTokenCtrl = TextEditingController();
-  final _githubUserCtrl = TextEditingController();
+  final TextEditingController _deepseekCtrl =
+      TextEditingController();
+  final TextEditingController _githubTokenCtrl =
+      TextEditingController();
+  final TextEditingController _githubUserCtrl =
+      TextEditingController();
   bool _showDeepseek = false;
   bool _showToken = false;
 
@@ -38,21 +43,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Saved"), backgroundColor: Color(0xFF3FB950)),
+        const SnackBar(
+          content: Text("Saved"),
+          backgroundColor: Color(0xFF3FB950),
+        ),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final ColorScheme cs = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(title: const Text("Settings")),
       body: ListView(
         padding: const EdgeInsets.all(16),
-        children: [;
-          Text("DeepSeek API Key", style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
+        children: [
+          Text("DeepSeek API Key",
+              style: TextStyle(
+                  color: cs.onSurfaceVariant, fontSize: 13)),
           const SizedBox(height: 6),
           TextField(
             controller: _deepseekCtrl,
@@ -60,17 +70,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
             decoration: InputDecoration(
               hintText: "sk-...",
               suffixIcon: IconButton(
-                icon: Icon(_showDeepseek ? Icons.visibility_off : Icons.visibility),
-                onPressed: () => setState(() => _showDeepseek = !_showDeepseek),
+                icon: Icon(_showDeepseek
+                    ? Icons.visibility_off
+                    : Icons.visibility),
+                onPressed: () {
+                  setState(() {
+                    _showDeepseek = !_showDeepseek;
+                  });
+                },
               ),
             ),
           ),
           const SizedBox(height: 6),
-          Text("Get at platform.deepseek.com РІвЂ вЂ™ API Keys",
-              style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
+          Text("Get at platform.deepseek.com -> API Keys",
+              style: TextStyle(
+                  color: cs.onSurfaceVariant, fontSize: 11)),
           const SizedBox(height: 20),
 
-          Text("GitHub Token", style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
+          Text("GitHub Token",
+              style: TextStyle(
+                  color: cs.onSurfaceVariant, fontSize: 13)),
           const SizedBox(height: 6),
           TextField(
             controller: _githubTokenCtrl,
@@ -78,21 +97,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
             decoration: InputDecoration(
               hintText: "ghp_...",
               suffixIcon: IconButton(
-                icon: Icon(_showToken ? Icons.visibility_off : Icons.visibility),
-                onPressed: () => setState(() => _showToken = !_showToken),
+                icon: Icon(_showToken
+                    ? Icons.visibility_off
+                    : Icons.visibility),
+                onPressed: () {
+                  setState(() {
+                    _showToken = !_showToken;
+                  });
+                },
               ),
             ),
           ),
           const SizedBox(height: 6),
-          Text("GitHub РІвЂ вЂ™ Settings РІвЂ вЂ™ Developer settings РІвЂ вЂ™ Tokens (repo scope)",
-              style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
+          Text(
+              "GitHub -> Settings -> Developer settings -> Tokens (repo scope)",
+              style: TextStyle(
+                  color: cs.onSurfaceVariant, fontSize: 11)),
           const SizedBox(height: 20),
 
-          Text("GitHub Username", style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
+          Text("GitHub Username",
+              style: TextStyle(
+                  color: cs.onSurfaceVariant, fontSize: 13)),
           const SizedBox(height: 6),
           TextField(
             controller: _githubUserCtrl,
-            decoration: const InputDecoration(hintText: "your-username"),
+            decoration:
+                const InputDecoration(hintText: "your-username"),
           ),
           const SizedBox(height: 30),
 
@@ -101,13 +131,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
             style: FilledButton.styleFrom(
               backgroundColor: cs.primary,
               minimumSize: const Size.fromHeight(50),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Text("Save", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            child: const Text("Save",
+                style: TextStyle(
+                    fontSize: 16, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
     );
   }
 }
-

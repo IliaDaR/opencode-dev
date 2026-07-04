@@ -13,7 +13,9 @@ class GitService {
     required this.token,
   });
 
-  Directory get _projectDir => StorageService.projectDir(projectName);
+  Directory get _projectDir {
+    return StorageService.projectDir(projectName);
+  }
 
   Future<ProcessResult> _runGit(List<String> args) async {
     return await Process.run("git", args,
@@ -29,9 +31,10 @@ class GitService {
       await _projectDir.delete(recursive: true);
     }
 
-    final authUrl = repoUrl.replaceFirst("https://", "https://$token@");
-    final result = await Process.run(
-        "git", ["clone", "--depth", "1", authUrl, _projectDir.path]);
+    final authUrl =
+        repoUrl.replaceFirst("https://", "https://$token@");
+    final result = await Process.run("git",
+        ["clone", "--depth", "1", authUrl, _projectDir.path]);
 
     if (result.exitCode != 0) {
       return "Clone failed: ${result.stderr}";
@@ -57,12 +60,12 @@ class GitService {
       return "Not a git repository";
     }
 
-    await _runGit([;
+    await _runGit([
       "config",
       "user.name",
       SettingsService.githubUser,
     ]);
-    await _runGit([;
+    await _runGit([
       "config",
       "user.email",
       "${SettingsService.githubUser}@opencode.mobile",
@@ -77,7 +80,7 @@ class GitService {
 
     final commitResult = await _runGit(["commit", "-m", message]);
     if (commitResult.exitCode != 0) {
-      final out = (commitResult.stdout as String) +;
+      final out = (commitResult.stdout as String) +
           (commitResult.stderr as String);
       if (out.contains("nothing to commit")) {
         return "Nothing to commit";
@@ -108,12 +111,12 @@ class GitService {
       return ["No commits yet"];
     }
 
-    final result = await _runGit(["log", "--oneline", "-n", "$limit"]);
-    return (result.stdout as String);
-        .trim();
-        .split("\n");
-        .where((l) => l.isNotEmpty);
+    final result =
+        await _runGit(["log", "--oneline", "-n", "$limit"]);
+    return (result.stdout as String)
+        .trim()
+        .split("\n")
+        .where((l) => l.isNotEmpty)
         .toList();
   }
 }
-

@@ -4,13 +4,17 @@ class ToolCall {
   final String arguments;
 
   ToolCall(
-      {required this.id, required this.name, required this.arguments});
+      {required this.id,
+      required this.name,
+      required this.arguments});
 
-  Map<String, dynamic> toJson() => {
-        "id": id,
-        "type": "function",
-        "function": {"name": name, "arguments": arguments},
-      };
+  Map<String, dynamic> toJson() {
+    return {
+      "id": id,
+      "type": "function",
+      "function": {"name": name, "arguments": arguments},
+    };
+  }
 }
 
 class Message {
@@ -27,9 +31,13 @@ class Message {
   });
 
   Map<String, dynamic> toJson() {
-    final map = <String, dynamic>{"role": role, "content": content};
+    final map = <String, dynamic>{
+      "role": role,
+      "content": content,
+    };
     if (toolCalls != null && toolCalls!.isNotEmpty) {
-      map["tool_calls"] = toolCalls!.map((tc) => tc.toJson()).toList();
+      map["tool_calls"] =
+          toolCalls!.map((tc) => tc.toJson()).toList();
     }
     if (toolCallId != null) {
       map["tool_call_id"] = toolCallId;
@@ -37,4 +45,3 @@ class Message {
     return map;
   }
 }
-

@@ -7,23 +7,39 @@ class SettingsService {
     _prefs = await SharedPreferences.getInstance();
   }
 
-  static String get deepseekApiKey =>;
-      _prefs.getString("deepseek_key") ?? "";
-  static set deepseekApiKey(String v) =>;
-      _prefs.setString("deepseek_key", v);
+  static String get deepseekApiKey {
+    return _prefs.getString("deepseek_key") ?? "";
+  }
 
-  static String get githubToken => _prefs.getString("github_token") ?? "";
-  static set githubToken(String v) => _prefs.setString("github_token", v);
+  static set deepseekApiKey(String value) {
+    _prefs.setString("deepseek_key", value);
+  }
 
-  static String get githubUser => _prefs.getString("github_user") ?? "";
-  static set githubUser(String v) => _prefs.setString("github_user", v);
+  static String get githubToken {
+    return _prefs.getString("github_token") ?? "";
+  }
 
-  static String get currentProject =>;
-      _prefs.getString("current_project") ?? "";
-  static set currentProject(String v) =>;
-      _prefs.setString("current_project", v);
+  static set githubToken(String value) {
+    _prefs.setString("github_token", value);
+  }
 
-  static bool get isConfigured =>;
-      deepseekApiKey.isNotEmpty && githubToken.isNotEmpty;
+  static String get githubUser {
+    return _prefs.getString("github_user") ?? "";
+  }
+
+  static set githubUser(String value) {
+    _prefs.setString("github_user", value);
+  }
+
+  static String get currentProject {
+    return _prefs.getString("current_project") ?? "";
+  }
+
+  static set currentProject(String value) {
+    _prefs.setString("current_project", value);
+  }
+
+  static bool get isConfigured {
+    return deepseekApiKey.isNotEmpty && githubToken.isNotEmpty;
+  }
 }
-

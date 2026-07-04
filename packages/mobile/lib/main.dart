@@ -23,46 +23,45 @@ class OpenCodeApp extends StatelessWidget {
       theme: ThemeData(
         brightness: Brightness.dark,
         scaffoldBackgroundColor: const Color(0xFF0D1117),
-        colorScheme: ColorScheme.dark(
-          surface: const Color(0xFF161B22),
-          primary: const Color(0xFF58A6FF),
-          onSurface: const Color(0xFFE6EDF3),
-          onSurfaceVariant: const Color(0xFF8B949E),
-          error: const Color(0xFFF85149),
+        colorScheme: const ColorScheme.dark(
+          surface: Color(0xFF161B22),
+          primary: Color(0xFF58A6FF),
+          onSurface: Color(0xFFE6EDF3),
+          onSurfaceVariant: Color(0xFF8B949E),
+          error: Color(0xFFF85149),
         ),
         appBarTheme: const AppBarTheme(
           backgroundColor: Color(0xFF161B22),
           elevation: 0,
           centerTitle: true,
         ),
-        cardTheme: CardThemeData(
-          color: const Color(0xFF161B22),
+        cardTheme: const CardThemeData(
+          color: Color(0xFF161B22),
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12)),
+              borderRadius: BorderRadius.all(Radius.circular(12))),
         ),
-        inputDecorationTheme: InputDecorationTheme(
+        inputDecorationTheme: const InputDecorationTheme(
           filled: true,
-          fillColor: const Color(0xFF21262D),
+          fillColor: Color(0xFF21262D),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF30363D)),
+            borderRadius: BorderRadius.all(Radius.circular(12)),
+            borderSide: BorderSide(color: Color(0xFF30363D)),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF30363D)),
+            borderRadius: BorderRadius.all(Radius.circular(12)),
+            borderSide: BorderSide(color: Color(0xFF30363D)),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF58A6FF)),
+            borderRadius: BorderRadius.all(Radius.circular(12)),
+            borderSide: BorderSide(color: Color(0xFF58A6FF)),
           ),
-          contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16, vertical: 14),
+          contentPadding:
+              EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
-        textTheme:;
+        textTheme:
             GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
       ),
       home: const ProjectsScreen(),
     );
   }
 }
-
