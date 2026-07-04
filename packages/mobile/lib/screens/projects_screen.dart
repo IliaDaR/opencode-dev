@@ -34,6 +34,11 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
           MaterialPageRoute(
               builder: (_) => const OnboardingScreen()),
         );
+        if (!SettingsService.isConfigured) {
+          // User pressed back without configuring — try again
+          _checkConfig();
+          return;
+        }
         await StorageService.init();
         _loadProjects();
       }

@@ -317,7 +317,7 @@ $modeInstructions
 ${SkillKnowledge.all}
 
 ## AVAILABLE TOOLS
-You have 34+ tools available. Key categories:
+You have 43 tools available. Key categories:
 
 FILE: read_file, write_file, edit_file, delete_file, list_files, glob_files, search_code
 GIT: git_sync, git_status
@@ -1655,16 +1655,44 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
               "Bearer ${SettingsService.deepseekApiKey}",
         },
         body: body,
-      );
+      ).timeout(const Duration(seconds: 90));
 
       if (response.statusCode != 200) {
-        yield "API Error (${response.statusCode}): ${response.body}";
+        final msg = switch (response.statusCode) {
+          401 => "Invalid API key. Check your DeepSeek key in Settings.",
+          429 => "Rate limited. Wait a moment and try again.",
+          503 => "DeepSeek is temporarily unavailable. Try again later.",
+          _ => "API Error (${response.statusCode})",
+        };
+        yield msg;
         return;
       }
 
-      final json = jsonDecode(response.body);
-      final choice = json["choices"][0];
-      final msg = choice["message"];
+      Map<String, dynamic> json;
+      try {
+        json = jsonDecode(response.body);
+      } catch (_) {
+        yield "Invalid response from API. Try again.";
+        return;
+      }
+
+      final choices = json["choices"] as List?;
+      if (choices == null || choices.isEmpty) {
+        yield "Empty response from API. The model may be overloaded.";
+        return;
+      }
+
+      final choice = choices[0] as Map<String, dynamic>?;
+      if (choice == null) {
+        yield "Malformed response from API.";
+        return;
+      }
+
+      final msg = choice["message"] as Map<String, dynamic>?;
+      if (msg == null) {
+        yield "No message in API response.";
+        return;
+      }
 
       final content = msg["content"];
       if (content is String && content.isNotEmpty) {

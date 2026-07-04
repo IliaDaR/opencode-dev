@@ -47,9 +47,20 @@ class GitService {
       return "Not a git repository";
     }
 
-    final result = await _runGit(["pull", "--rebase"]);
+    // Check for uncommitted changes before pulling
+    final stResult = await _runGit(["status", "--porcelain"]);
+    if ((stResult.stdout as String).trim().isNotEmpty) {
+      return "Uncommitted changes detected. Commit or stash before pulling.";
+    }
+
+    final result = await _runGit(["pull", "--rebase", "--autostash"]);
     if (result.exitCode != 0) {
-      return "Pull failed: ${result.stderr}";
+      final stderr = result.stderr as String;
+      if (stderr.contains("CONFLICT") || stderr.contains("conflict")) {
+        await _runGit(["rebase", "--abort"]);
+        return "Git conflict during pull — aborted. Resolve on PC: pull, fix conflicts, push, then retry.";
+      }
+      return "Pull failed: $stderr";
     }
     final stdout = (result.stdout as String).trim();
     return stdout.isEmpty ? "Already up to date" : stdout;
