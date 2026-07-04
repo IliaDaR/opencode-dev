@@ -80,8 +80,8 @@ class SkillKnowledge {
 
   static const String svelte = """
 ## Svelte
-- Compiler, not runtime. Reactive declarations: $: derived = a + b.
-- Stores: writable/derived. Auto-subscriptions with $ prefix.
+- Compiler, not runtime. Reactive declarations: \$: derived = a + b.
+- Stores: writable/derived. Auto-subscriptions with \$ prefix.
 - SvelteKit: file-based routing, server load functions, form actions.
 - Each block: {#each items as item (item.id)}. Keyed for identity.
 """;
@@ -491,9 +491,9 @@ class SkillKnowledge {
   static const String mongodb = """
 ## MongoDB
 - Document model. Embed for 1:1/1:few, reference for 1:many/many:many.
-- Aggregation pipeline: $match → $group → $sort → $project → $lookup.
+- Aggregation pipeline: \$match → \$group → \$sort → \$project → \$lookup.
 - Indexes: single, compound, text, geo. explain() to verify.
-- Schema validation: $jsonSchema. Transactions for multi-document operations.
+- Schema validation: \$jsonSchema. Transactions for multi-document operations.
 - When: flexible schema, rapid iteration. When NOT: complex joins, ACID everywhere.
 """;
 

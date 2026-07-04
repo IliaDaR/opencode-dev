@@ -37,7 +37,7 @@ class BrowserService {
 
     // Extract meta description
     final descMatch = RegExp(
-            r#"<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']"#,
+            "<meta[^>]*name=[\"']description[\"'][^>]*content=[\"']([^\"']+)[\"']",
             caseSensitive: false)
         .firstMatch(html);
     if (descMatch != null) {
@@ -47,7 +47,7 @@ class BrowserService {
     // Extract links
     buffer.writeln("\n## Links");
     final linkRegex = RegExp(
-        r#"<a[^>]*href=["']([^"']+)["'][^>]*>(.*?)</a>"#,
+        "<a[^>]*href=[\"']([^\"']+)[\"'][^>]*>(.*?)</a>",
         caseSensitive: false);
     final links = <String>{};
     for (final match in linkRegex.allMatches(html)) {

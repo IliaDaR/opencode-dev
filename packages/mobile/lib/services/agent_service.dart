@@ -10,7 +10,6 @@ import "lsp_service.dart";
 import "sub_agent_service.dart";
 import "deployment_service.dart";
 import "project_service.dart";
-import "documentation_service.dart";
 import "code_generation_service.dart";
 import "brainstorm_engine.dart";
 import "skills.dart";
@@ -1481,9 +1480,8 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
               args["description"],
               args["tech_stack"]);
         case "generate_api_docs":
-          return await DocumentationService
-              .generateApiDocs(args["project"],
-                  args["source_file"]);
+          return await ProjectService.generateApiDocs(
+              args["project"], args["source_file"]);
         default:
           return "Unknown tool: $name";
       }
