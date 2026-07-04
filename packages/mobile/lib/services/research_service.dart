@@ -331,16 +331,18 @@ class ResearchService {
     buffer.writeln("### How to proceed:");
     buffer.writeln();
 
+    var step = 1;
+
     if (results.any((r) =>
         r.url.contains("docs.") || r.url.contains("documentation"))) {
-      buffer.writeln("1. Read the official documentation first");
+      buffer.writeln("${step++}. Read the official documentation first");
     }
     buffer.writeln(
-        "${buffer.toString().isEmpty ? 1 : 2}. Check for existing implementations on GitHub");
+        "${step++}. Check for existing implementations on GitHub");
     buffer.writeln(
-        "${buffer.toString().isEmpty ? 2 : 3}. Consider trade-offs: complexity vs benefit");
+        "${step++}. Consider trade-offs: complexity vs benefit");
     buffer.writeln(
-        "${buffer.toString().isEmpty ? 3 : 4}. Prototype the most promising approach");
+        "${step++}. Prototype the most promising approach");
 
     if (results.isNotEmpty) {
       buffer.writeln("\n### Key links:");

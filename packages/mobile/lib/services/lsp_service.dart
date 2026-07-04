@@ -87,12 +87,15 @@ class LspService {
               case "jsx":
                 issues = _checkTypeScript(
                     content, fullPath);
+                break;
               case "py":
                 issues =
                     _checkPython(content, fullPath);
+                break;
               case "dart":
                 issues =
                     _checkDart(content, fullPath);
+                break;
             }
 
             issues

@@ -1666,13 +1666,12 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
       final choice = json["choices"][0];
       final msg = choice["message"];
 
-      if (msg["content"] != null &&
-          (msg["content"] as String).isNotEmpty) {
-        yield msg["content"];
+      final content = msg["content"];
+      if (content is String && content.isNotEmpty) {
+        yield content;
       }
 
-      if (msg["tool_calls"] != null &&
-          (msg["tool_calls"] as List).isNotEmpty) {
+      if (msg["tool_calls"] is List && (msg["tool_calls"] as List).isNotEmpty) {
         final toolCalls =
             (msg["tool_calls"] as List).map((tc) {
           return ToolCall(
@@ -1729,7 +1728,7 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
       break;
     }
 
-    saveSession();
+    await saveSession();
   }
 
   Future<void> reset() async {

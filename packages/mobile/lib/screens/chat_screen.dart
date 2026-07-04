@@ -1,5 +1,4 @@
 import "dart:async";
-import "dart:io";
 import "package:flutter/material.dart";
 import "../services/agent_service.dart";
 import "../services/git_service.dart";
@@ -90,6 +89,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _addSystem(String text) {
+    if (!mounted) return;
     setState(() => _messages.add(UIMessage(
         id: ++_messageIdCounter,
         type: UIMessageType.system,
@@ -98,6 +98,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _addUser(String text) {
+    if (!mounted) return;
     setState(() => _messages.add(UIMessage(
         id: ++_messageIdCounter,
         type: UIMessageType.user,
@@ -106,6 +107,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _addAssistant(String text) {
+    if (!mounted) return;
     final last = _messages.isNotEmpty ? _messages.last : null;
     if (last != null &&
         last.type == UIMessageType.assistant &&
@@ -122,6 +124,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _addToolCall(String tool, String args, String result) {
+    if (!mounted) return;
     setState(() {
       final idx = _messages.indexWhere((m) =>
           m.type == UIMessageType.toolPending && m.toolName == tool);
@@ -145,6 +148,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _addToolPending(String tool, String args) {
+    if (!mounted) return;
     setState(() => _messages.add(UIMessage(
         id: ++_messageIdCounter,
         type: UIMessageType.toolPending,
