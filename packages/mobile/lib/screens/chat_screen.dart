@@ -1,4 +1,5 @@
 import "dart:async";
+import "dart:io";
 import "package:flutter/material.dart";
 import "../services/agent_service.dart";
 import "../services/git_service.dart";
@@ -257,7 +258,7 @@ class _ChatScreenState extends State<ChatScreen> {
           if (_gitStatus.isNotEmpty &&
               _gitStatus != "No changes")
             IconButton(
-              icon: const Icon(Icons.git_branch, size: 20),
+              icon: const Icon(Icons.call_split, size: 20),
               tooltip: _gitStatus,
               onPressed: () {
                 _addMessage("system", _gitStatus);
