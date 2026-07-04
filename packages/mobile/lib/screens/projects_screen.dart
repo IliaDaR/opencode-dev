@@ -27,6 +27,8 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
     _checkConfig();
   }
 
+  @override
+  void dispose() {
     _cloneCtrl.dispose();
     super.dispose();
   }
