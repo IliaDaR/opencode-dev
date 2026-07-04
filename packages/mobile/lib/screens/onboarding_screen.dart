@@ -42,7 +42,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     SettingsService.githubUser = _githubUserCtrl.text.trim();
     await Future.delayed(const Duration(milliseconds: 500));
     if (mounted) {
-      Navigator.of(context).pushReplacementNamed("/projects");
+      Navigator.of(context).pop();
     }
   }
 

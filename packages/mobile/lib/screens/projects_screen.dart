@@ -4,6 +4,7 @@ import "../services/storage_service.dart";
 import "../services/git_service.dart";
 import "chat_screen.dart";
 import "settings_screen.dart";
+import "onboarding_screen.dart";
 
 class ProjectsScreen extends StatefulWidget {
   const ProjectsScreen({super.key});
@@ -31,7 +32,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
       if (mounted) {
         await Navigator.of(context).push(
           MaterialPageRoute(
-              builder: (_) => const SettingsScreen()),
+              builder: (_) => const OnboardingScreen()),
         );
         _loadProjects();
       }
