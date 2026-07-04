@@ -35,7 +35,7 @@ class OpenCodeApp extends StatelessWidget {
           elevation: 0,
           centerTitle: true,
         ),
-        cardTheme: const CardThemeData(
+        cardTheme: const CardTheme(
           color: Color(0xFF161B22),
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.all(Radius.circular(12))),
