@@ -36,6 +36,7 @@ import "merge_conflict_resolver.dart";
 import "performance_profiler.dart";
 import "daily_standup_service.dart";
 import "cron_scheduler.dart";
+import "task_library.dart";
 import "skills.dart";
 import "session_memory.dart";
 import "research_service.dart";
@@ -1648,6 +1649,8 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
     { "type":"function","function":{ "name":"search_github_trending","description":"Search GitHub trending repos by language.","parameters":{"type":"object","properties":{"language":{"type":"string"}},"required":["language"]}}},
     { "type":"function","function":{ "name":"npm_downloads","description":"Check npm package weekly downloads.","parameters":{"type":"object","properties":{"package":{"type":"string"}},"required":["package"]}}},
     { "type":"function","function":{ "name":"bundle_phobia","description":"Check npm package bundle size impact.","parameters":{"type":"object","properties":{"package":{"type":"string"}},"required":["package"]}}},
+    { "type":"function","function":{ "name":"run_task","description":"Run a pre-built task from the 100+ task library (daily/weekly/deploy/maintain/ideas).","parameters":{"type":"object","properties":{"task_id":{"type":"string","description":"Task ID from library"}},"required":["task_id"]}}},
+    { "type":"function","function":{ "name":"list_tasks","description":"List all available pre-built tasks in the library. Filter by category: daily, weekly, precommit, deploy, maintain, ideas, all.","parameters":{"type":"object","properties":{"category":{"type":"string","enum":["daily","weekly","precommit","deploy","maintain","ideas","all"]}},"required":[]}}},
   ];
 
   void setMode(AgentMode mode) {
