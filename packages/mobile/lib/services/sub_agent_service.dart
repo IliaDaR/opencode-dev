@@ -187,8 +187,10 @@ Output: Hypothesis → Experiment Design → Analysis → Recommendation
       }
 
       final json = jsonDecode(response.body);
+      final choices = json["choices"] as List?;
+      if (choices == null || choices.isEmpty) return "Sub-agent returned empty response.";
       final content =
-          json["choices"][0]["message"]["content"] ?? "";
+          choices[0]["message"]["content"] ?? "";
 
       return "## Sub-agent: $agentType\n\n$content";
     } catch (e) {

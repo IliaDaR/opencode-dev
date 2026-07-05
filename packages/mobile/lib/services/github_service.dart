@@ -63,7 +63,7 @@ class GitHubService {
 
       return issues
           .map((i) =>
-              "#${i["number"]} [${i["state"]}] ${i["title"]}\n  by ${i["user"]["login"]} • ${i["comments"]} comments\n  ${i["html_url"]}")
+              "#${i["number"] ?? "?"} [${i["state"] ?? "?"}] ${i["title"] ?? ""}\n  by ${i["user"]?["login"] ?? "unknown"} • ${i["comments"] ?? 0} comments\n  ${i["html_url"] ?? ""}")
           .join("\n\n");
     } catch (e) {
       return "GitHub API error: $e";
@@ -119,7 +119,7 @@ class GitHubService {
 
       return prs
           .map((p) =>
-              "#${p["number"]} ${p["title"]}\n  by ${p["user"]["login"]} • ${p["state"]}\n  ${p["html_url"]}")
+              "#${p["number"] ?? "?"} ${p["title"] ?? ""}\n  by ${p["user"]?["login"] ?? "unknown"} • ${p["state"] ?? "?"}\n  ${p["html_url"] ?? ""}")
           .join("\n\n");
     } catch (e) {
       return "GitHub API error: $e";

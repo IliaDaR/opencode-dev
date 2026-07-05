@@ -1542,27 +1542,7 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
         },
       },
     },
-    {
-      "type": "function",
-      "function": {
-        "name": "daily_standup",
-        "description": "Generate a daily standup summary from git history: what was done today.",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "project": {"type": "string"},
-          },
-          "required": ["project"],
-        },
-      },
-    },
-    {
-      "type": "function", "function": {
-        "name": "daily_standup",
-        "description": "Generate a daily standup summary from git history.",
-        "parameters": {"type":"object","properties":{"project":{"type":"string"}},"required":["project"]},
-      },
-    },
+    { "type":"function","function":{ "name":"daily_standup","description":"Generate a daily standup summary from git history.","parameters":{"type":"object","properties":{"project":{"type":"string"}},"required":["project"]}}},
     { "type":"function","function":{ "name":"cron_schedule","description":"Schedule a task for later (e.g. 'check tests at 9am').","parameters":{"type":"object","properties":{"project":{"type":"string"},"task":{"type":"string"},"when":{"type":"string","description":"ISO datetime"}},"required":["project","task","when"]}}},
     { "type":"function","function":{ "name":"cron_list","description":"List all scheduled tasks.","parameters":{"type":"object","properties":{"project":{"type":"string"}},"required":["project"]}}},
     { "type":"function","function":{ "name":"cron_cancel","description":"Cancel a scheduled task.","parameters":{"type":"object","properties":{"project":{"type":"string"},"task":{"type":"string","description":"Task pattern to match"}},"required":["project","task"]}}},
@@ -2109,7 +2089,7 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
               .generateApiDocs(args["project"],
                   args["source_file"]);
         default:
-          return "Error: Unknown tool '$name'. Available tools: read_file, write_file, edit_file, list_files, glob_files, search_code, delete_file, run_command, git_sync, git_status, web_search, web_fetch, browser_open, browser_extract, browser_follow, sql_detect, sql_query, sql_schema, github_list_issues, github_create_issue, github_list_prs, github_get_pr, github_search_code, github_get_file, github_get_repo, diagnose_file, analyze_project, check_imports, find_patterns, suggest_tests, suggest_optimizations, generate_test_template, generate_boilerplate, impact_analysis, delegate_task, estimate_effort, generate_readme, generate_api_docs, check_deploy_readiness, generate_docker_compose, generate_ci_config, create_tasks, ask_user.";
+          return "Unknown tool: $name. Use list_tasks to see available tools.";
       }
     } catch (e) {
       return "Error: $e";
@@ -2403,8 +2383,8 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
     } catch (e) { return "Hash failed: $e"; }
   }
 
-  static String _md5(List<int> bytes) => bytes.length.toString() + "abc123";
-  static String _sha256(List<int> bytes) => bytes.length.toString() + "def456";
+  static String _md5(List<int> bytes) => "Hashing requires crypto package. Use run_command: shasum file";
+  static String _sha256(List<int> bytes) => "Hashing requires crypto package. Use run_command: shasum file";
 
   Future<String> _createArchive(String project, String source, String format) async {
     final cmd = format == "zip" ? "zip -r archive.zip $source" : "tar -czf archive.tar.gz $source";
@@ -2485,34 +2465,15 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
   }
 
   static String _colorPalette(String base) {
-    final c = base.replaceAll("#", "");
-    return """
-Primary: #$c
-Light:   #${_lighten(c)}
-Dark:    #${_darken(c)}
-Accent:  #${_accent(c)}
-Muted:   #${_muted(c)}
-""";
+    return "Color palette generation unavailable. Use run_command with appropriate tool (e.g. color.js on node, colorsys on python).";
   }
-  static String _lighten(String hex) => hex;
-  static String _darken(String hex) => hex;
-  static String _accent(String hex) => hex;
-  static String _muted(String hex) => hex;
 
   static String _dateConvert(String date, String from, String to) {
-    try {
-      final dt = DateTime.tryParse(date);
-      if (dt == null) return "Invalid date format. Use ISO 8601.";
-      return "${dt.toIso8601String()} (from $from to $to)";
-    } catch (e) { return "Date conversion failed: $e"; }
+    return "Date conversion unavailable. Use run_command with appropriate tool (e.g. date on unix).";
   }
 
   static String _uuidGen(String version, int count) {
-    final buf = StringBuffer();
-    for (var i=0; i<count; i++) {
-      buf.writeln("${DateTime.now().millisecondsSinceEpoch}-$i-${version}-fake-uuid");
-    }
-    return buf.toString();
+    return "UUID generation unavailable. Use run_command with appropriate tool (e.g. uuidgen on unix, or node -e \"crypto.randomUUID()\").";
   }
 
   Future<String> _i18nFind(String project, String filePath) async {
@@ -2558,15 +2519,14 @@ Muted:   #${_muted(c)}
     messages.add(Message(role: "user", content: userMessage));
     maybeCompress();
 
-    maybeCompress();
-
     int loopCount = 0;
     const maxLoops = 20;
 
     while (loopCount < maxLoops) {
       loopCount++;
-      if (loopCount == maxLoops) {
+      if (loopCount >= maxLoops) {
         yield "\n(Max steps reached — task may be incomplete. Try breaking it into smaller steps.)\n";
+        break;
       }
 
       final body = jsonEncode({
@@ -2577,15 +2537,27 @@ Muted:   #${_muted(c)}
         "max_tokens": 4096,
       });
 
-      final response = await http.post(
-        Uri.parse(_apiUrl),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization":
-              "Bearer ${SettingsService.deepseekApiKey}",
-        },
-        body: body,
-      ).timeout(const Duration(seconds: 90));
+      Map<String, dynamic>? postResponse;
+      try {
+        postResponse = await http.post(
+          Uri.parse(_apiUrl),
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization":
+                "Bearer ${SettingsService.deepseekApiKey}",
+          },
+          body: body,
+        ).timeout(const Duration(seconds: 90));
+      } catch (e) {
+        if (e is SocketException || e is TimeoutException || e.toString().contains("SocketException") || e.toString().contains("TimeoutException")) {
+          yield "Connection failed: unable to reach API server. Check your internet connection and try again.";
+        } else {
+          yield "API request failed: $e";
+        }
+        return;
+      }
+
+      final response = postResponse!;
 
       if (response.statusCode != 200) {
         final msg = switch (response.statusCode) {
@@ -2648,6 +2620,11 @@ Muted:   #${_muted(c)}
         for (final tc in msg["tool_calls"]) {
           final fn = tc["function"];
           final toolName = fn["name"] as String;
+
+          if (fn["arguments"] is! String) {
+            yield "Error: invalid tool arguments";
+            continue;
+          }
 
           Map<String, dynamic> toolArgs;
           try {

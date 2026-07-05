@@ -3,7 +3,6 @@ import "dart:io";
 import "storage_service.dart";
 import "git_service.dart";
 import "lsp_service.dart";
-import "session_memory.dart";
 
 /// Pre-commit self-review: checks code quality before committing
 /// Catches 80% of bugs before they reach the repo

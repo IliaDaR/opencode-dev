@@ -8,7 +8,7 @@ class PermissionService {
     "list_files": "allow",
     "glob_files": "allow",
     "search_code": "allow",
-    "run_command": "allow",
+    "run_command": "ask",
     "git_sync": "allow",
     "git_status": "allow",
     "web_search": "allow",

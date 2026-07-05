@@ -1,6 +1,5 @@
 import "dart:io";
 import "storage_service.dart";
-import "session_memory.dart";
 
 /// Deep code understanding — import graph, impact analysis, patterns
 class CodeIntelligence {

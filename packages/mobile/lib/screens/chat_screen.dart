@@ -30,6 +30,7 @@ class _ChatScreenState extends State<ChatScreen> {
   SyncService? _sync;
   GitService? _gitService;
   String? _projectName;
+  Timer? _scrollTimer;
   final _inputCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
   final List<UIMessage> _messages = [];
@@ -264,7 +265,8 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _scrollDown() {
-    Future.delayed(const Duration(milliseconds: 80), () {
+    _scrollTimer?.cancel();
+    _scrollTimer = Timer(const Duration(milliseconds: 80), () {
       if (_scrollCtrl.hasClients) {
         _scrollCtrl.animateTo(_scrollCtrl.position.maxScrollExtent,
             duration: const Duration(milliseconds: 150), curve: Curves.easeOut);
@@ -423,6 +425,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void dispose() {
+    _scrollTimer?.cancel();
     _inputCtrl.dispose();
     _scrollCtrl.dispose();
     super.dispose();
@@ -500,7 +503,7 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       body: Column(children: [
         Expanded(child: _messages.isEmpty
-            ? const Center(child: CircularProgressIndicator())
+            ? _LoadingIndicator()
             : ListView.builder(
                 controller: _scrollCtrl,
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -667,6 +670,50 @@ class _ChatScreenState extends State<ChatScreen> {
     "web_search" || "web_fetch" => const Color(0xFF00BCD4),
     _ => const Color(0xFF8B949E),
   };
+}
+
+class _LoadingIndicator extends StatefulWidget {
+  const _LoadingIndicator();
+
+  @override
+  State<_LoadingIndicator> createState() => _LoadingIndicatorState();
+}
+
+class _LoadingIndicatorState extends State<_LoadingIndicator> {
+  Timer? _timeoutTimer;
+  bool _takingLonger = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _timeoutTimer = Timer(const Duration(seconds: 10), () {
+      if (mounted) setState(() => _takingLonger = true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _timeoutTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const CircularProgressIndicator(),
+        const SizedBox(height: 16),
+        const Text("Loading..."),
+        if (_takingLonger)
+          const Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: Text("Taking longer than expected",
+                style: TextStyle(color: Colors.orange, fontSize: 12)),
+          ),
+      ],
+    ));
+  }
 }
 
 enum UIMessageType { system, user, assistant, toolCall, toolResult, toolPending }

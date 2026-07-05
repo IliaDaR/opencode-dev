@@ -99,6 +99,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
           MaterialPageRoute(
               builder: (_) => const ChatScreen()),
         ).then((_) {
+          if (!mounted) return;
           _loadProjects();
         });
       }

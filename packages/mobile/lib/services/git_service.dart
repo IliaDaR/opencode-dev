@@ -31,10 +31,9 @@ class GitService {
       return "Project already exists. Use pull to update, or delete it first.";
     }
 
-    final authUrl =
-        repoUrl.replaceFirst("https://", "https://$token@");
     final result = await Process.run("git",
-        ["clone", "--depth", "1", authUrl, _projectDir.path]);
+        ["-c", "http.extraHeader=Authorization: Bearer $token", "clone", "--depth", "1", repoUrl, _projectDir.path],
+        environment: {"GIT_TERMINAL_PROMPT": "0"});
 
     if (result.exitCode != 0) {
       return "Clone failed: ${result.stderr}";

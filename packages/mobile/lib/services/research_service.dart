@@ -2,7 +2,6 @@ import "dart:convert";
 import "dart:io";
 import "package:http/http.dart" as http;
 import "storage_service.dart";
-import "session_memory.dart";
 
 /// Web research — fetch docs, search, analyze
 class ResearchService {

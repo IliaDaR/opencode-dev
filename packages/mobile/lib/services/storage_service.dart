@@ -34,17 +34,33 @@ class StorageService {
         .toList();
   }
 
+  static File _safeFile(String project, String filePath) {
+    final fullPath = p.join(_projectsRoot.path, project, filePath);
+    final normalized = p.normalize(fullPath);
+    if (!normalized.startsWith(p.normalize(_projectsRoot.path))) {
+      throw Exception("Path traversal detected: $filePath");
+    }
+    return File(fullPath);
+  }
+
+  static Directory _safeDir(String project, String subPath) {
+    final fullPath = p.join(_projectsRoot.path, project, subPath);
+    final normalized = p.normalize(fullPath);
+    if (!normalized.startsWith(p.normalize(_projectsRoot.path))) {
+      throw Exception("Path traversal detected: $subPath");
+    }
+    return Directory(fullPath);
+  }
+
   static Future<String> readFile(
       String project, String filePath) async {
-    final file =
-        File(p.join(_projectsRoot.path, project, filePath));
+    final file = _safeFile(project, filePath);
     return await file.readAsString();
   }
 
   static Future<void> writeFile(
       String project, String filePath, String content) async {
-    final file =
-        File(p.join(_projectsRoot.path, project, filePath));
+    final file = _safeFile(project, filePath);
     final dir = file.parent;
     if (!await dir.exists()) {
       await dir.create(recursive: true);
@@ -54,8 +70,7 @@ class StorageService {
 
   static Future<void> deleteFile(
       String project, String filePath) async {
-    final file =
-        File(p.join(_projectsRoot.path, project, filePath));
+    final file = _safeFile(project, filePath);
     if (await file.exists()) {
       await file.delete();
     }
@@ -63,8 +78,7 @@ class StorageService {
 
   static Future<List<FileSystemEntity>> listDir(String project,
       [String subPath = ""]) async {
-    final dir = Directory(
-        p.join(_projectsRoot.path, project, subPath));
+    final dir = _safeDir(project, subPath);
     if (!await dir.exists()) {
       return [];
     }

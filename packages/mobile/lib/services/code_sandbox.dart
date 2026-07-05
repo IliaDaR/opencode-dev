@@ -80,17 +80,7 @@ class CodeSandbox {
   }
 
   static Future<String> _runDart(String code) async {
-    try {
-      final result = await Process.run(
-        "dart",
-        ["run", "-c", code],
-        runInShell: true,
-      ).timeout(const Duration(seconds: 15));
-      final out = (result.stdout as String).trim();
-      return out.isEmpty ? "(no output)" : out;
-    } catch (e) {
-      return "Sandbox error: $e. Is Dart installed?";
-    }
+    return "Dart sandbox not available on mobile. Use run_command: dart file.dart";
   }
 
   static Future<String> _runShell(String code) async {

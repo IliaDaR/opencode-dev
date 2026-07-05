@@ -36,9 +36,9 @@ class PerformanceProfiler {
               .hasMatch(content) &&
           !RegExp(r'useMemo|useCallback|useMemoized|computed|@Memo')
               .hasMatch(content) &&
-          filePath.contains("component") ||
+          (filePath.contains("component") ||
           filePath.contains("view") ||
-          filePath.contains("page")) {
+          filePath.contains("page"))) {
         buf.writeln("- ℹ️ Array operations in component — consider memoization.");
         issues++;
       }
