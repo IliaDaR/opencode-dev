@@ -29,6 +29,12 @@ import "error_learning_service.dart";
 import "security_scan_service.dart";
 import "api_tester.dart";
 import "debate_service.dart";
+import "code_sandbox.dart";
+import "dependency_updater.dart";
+import "interactive_debugger.dart";
+import "merge_conflict_resolver.dart";
+import "performance_profiler.dart";
+import "daily_standup_service.dart";
 import "skills.dart";
 import "session_memory.dart";
 import "research_service.dart";
@@ -1446,6 +1452,95 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
         },
       },
     },
+    {
+      "type": "function",
+      "function": {
+        "name": "run_code",
+        "description": "Run code in a sandbox. Supports js/py/dart/sh. Auto-detects language.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "project": {"type": "string"},
+            "code": {"type": "string"},
+            "language": {"type": "string"},
+          },
+          "required": ["project", "code"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "check_deps",
+        "description": "Check for outdated npm/pip dependencies.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "project": {"type": "string"},
+          },
+          "required": ["project"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "analyze_function",
+        "description": "Analyze a function: variables, returns, bugs, complexity.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "project": {"type": "string"},
+            "file_path": {"type": "string"},
+            "function_name": {"type": "string"},
+          },
+          "required": ["project","file_path","function_name"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "detect_conflicts",
+        "description": "Detect merge conflicts and show resolution strategy.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "project": {"type": "string"},
+          },
+          "required": ["project"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "profile_performance",
+        "description": "Analyze code for performance bottlenecks.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "project": {"type": "string"},
+            "file_path": {"type": "string"},
+          },
+          "required": ["project"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "daily_standup",
+        "description": "Generate a daily standup summary from git history: what was done today.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "project": {"type": "string"},
+          },
+          "required": ["project"],
+        },
+      },
+    },
   ];
 
   void setMode(AgentMode mode) {
@@ -1738,6 +1833,33 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
               args["title"], args["body"],
               head: args["head"] ?? "master",
               base: args["base"] ?? "main");
+        case "run_code":
+          return await CodeSandbox.run(
+              args["project"], args["code"],
+              language: args["language"]);
+        case "check_deps":
+          return await DependencyUpdater.check(
+              args["project"]);
+        case "analyze_function":
+          return await InteractiveDebugger.analyzeFunction(
+              args["project"], args["file_path"],
+              args["function_name"]);
+        case "detect_conflicts":
+          return await MergeConflictResolver.detect(
+              args["project"]);
+        case "profile_performance":
+          if (args["file_path"] != null) {
+            return await PerformanceProfiler.analyzeFile(
+                args["project"], args["file_path"]);
+          }
+          return await PerformanceProfiler.profileProject(
+              args["project"]);
+        case "daily_standup":
+          if (gitService != null) {
+            return await DailyStandupService.generate(
+                args["project"], gitService!);
+          }
+          return "Git not configured.";
         // Deployment
         case "check_deploy_readiness":
           return await DeploymentService
