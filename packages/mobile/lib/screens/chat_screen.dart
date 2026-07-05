@@ -2,7 +2,6 @@ import "dart:async";
 import "dart:io";
 import "package:flutter/material.dart";
 import "package:image_picker/image_picker.dart";
-import "package:speech_to_text/speech_to_text.dart" as stt;
 import "../services/agent_service.dart";
 import "../services/git_service.dart";
 import "../services/storage_service.dart";
@@ -14,7 +13,6 @@ import "../services/settings_service.dart";
 import "../services/localization.dart";
 import "../services/snapshot_service.dart";
 import "../services/session_sharing_service.dart";
-import "../services/background_service.dart";
 import "file_browser_screen.dart";
 import "settings_screen.dart";
 
@@ -39,14 +37,10 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _syncing = false;
   int _offlineCount = 0;
   int _messageIdCounter = 0;
-  late final stt.SpeechToText _speech;
-  bool _speechEnabled = false;
-  bool _isListening = false;
 
   @override
   void initState() {
     super.initState();
-    _speech = stt.SpeechToText();
     _agent = AgentService(projectName: "_general_");
     _init();
   }
@@ -201,42 +195,6 @@ class _ChatScreenState extends State<ChatScreen> {
     _agent.onToolCall = null;
     _agent.onToolResult = null;
     if (mounted) setState(() => _loading = false);
-  }
-
-  Future<void> _listen() async {
-    if (_isListening) {
-      _speech.stop();
-      setState(() => _isListening = false);
-      return;
-    }
-
-    final available = await _speech.initialize(
-      onStatus: (s) {
-        if (s == "done" || s == "notListening") {
-          setState(() => _isListening = false);
-        }
-      },
-      onError: (e) => setState(() => _isListening = false),
-    );
-
-    if (!available) {
-      _addSystem("Speech recognition not available");
-      return;
-    }
-
-    setState(() => _isListening = true);
-    _speech.listen(
-      onResult: (result) {
-        final text = result.recognizedWords;
-        _inputCtrl.text = text;
-        _inputCtrl.selection = TextSelection.fromPosition(
-            TextPosition(offset: text.length));
-        if (result.finalResult) {
-          setState(() => _isListening = false);
-        }
-      },
-      localeId: AppLocalization.current == "ru" ? "ru_RU" : "en_US",
-    );
   }
 
   void _addSystem(String text) {
@@ -437,15 +395,6 @@ class _ChatScreenState extends State<ChatScreen> {
     _agent.onToolCall = null;
     _agent.onToolResult = null;
     if (mounted) setState(() => _loading = false);
-
-    if (assistantText.isNotEmpty) {
-      await BackgroundService.notifyAgentComplete(
-        "OpenCode",
-        assistantText.length > 100
-            ? "${assistantText.substring(0, 100)}..."
-            : assistantText,
-      );
-    }
   }
 
   @override
@@ -559,15 +508,6 @@ class _ChatScreenState extends State<ChatScreen> {
             contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
           ),
         )),
-        const SizedBox(width: 2),
-        IconButton(
-          icon: Icon(_isListening ? Icons.mic : Icons.mic_none, size: 22),
-          color: _isListening ? Colors.red : const Color(0xFF8B949E),
-          onPressed: _loading ? null : _listen,
-          tooltip: "Voice input",
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-        ),
         const SizedBox(width: 6),
         IconButton(
           icon: const Icon(Icons.camera_alt, size: 22),
