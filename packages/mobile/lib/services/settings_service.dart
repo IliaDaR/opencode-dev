@@ -60,6 +60,6 @@ class SettingsService {
   }
 
   static bool get isConfigured {
-    return deepseekApiKey.isNotEmpty && githubToken.isNotEmpty;
+    return deepseekApiKey.isNotEmpty;
   }
 }

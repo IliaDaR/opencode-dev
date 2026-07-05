@@ -52,8 +52,8 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _init() async {
-    await SessionMemory.init();
     await StorageService.init();
+    await SessionMemory.init();
     await _agent.scanProject();
 
     final hasKey = SettingsService.deepseekApiKey.isNotEmpty;

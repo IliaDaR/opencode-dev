@@ -18,12 +18,19 @@ class _SimpleConfigScreenState extends State<SimpleConfigScreen> {
   bool _saving = false;
   bool _showKey = false;
 
+  bool _hasKey = false;
+
   @override
   void initState() {
     super.initState();
     _apiKeyCtrl.text = SettingsService.deepseekApiKey;
     _tokenCtrl.text = SettingsService.githubToken;
     _userCtrl.text = SettingsService.githubUser;
+    _hasKey = _apiKeyCtrl.text.trim().isNotEmpty;
+  }
+
+  void _onKeyChanged(String _) {
+    setState(() => _hasKey = _apiKeyCtrl.text.trim().isNotEmpty);
   }
 
   @override
@@ -52,7 +59,7 @@ class _SimpleConfigScreenState extends State<SimpleConfigScreen> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final hasKey = _apiKeyCtrl.text.trim().isNotEmpty;
+    final hasKey = _hasKey;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0D1117),
@@ -81,6 +88,7 @@ class _SimpleConfigScreenState extends State<SimpleConfigScreen> {
                 controller: _apiKeyCtrl,
                 obscureText: !_showKey,
                 autofocus: true,
+                onChanged: _onKeyChanged,
                 decoration: InputDecoration(
                   hintText: "sk-...",
                   suffixIcon: IconButton(

@@ -97,8 +97,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
         SettingsService.currentProject = name;
         Navigator.of(context).push(
           MaterialPageRoute(
-              builder: (_) => ChatScreen(
-                  projectName: name, gitService: git)),
+              builder: (_) => const ChatScreen()),
         ).then((_) {
           _loadProjects();
         });
@@ -117,8 +116,7 @@ class _ProjectsScreenState extends State<ProjectsScreen> {
 
     Navigator.of(context).push(
       MaterialPageRoute(
-          builder: (_) =>
-              ChatScreen(projectName: name, gitService: git)),
+          builder: (_) => const ChatScreen()),
     ).then((_) {
       _loadProjects();
     });
