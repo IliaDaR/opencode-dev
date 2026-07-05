@@ -2091,6 +2091,48 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
           return await DocumentationService
               .generateApiDocs(args["project"],
                   args["source_file"]);
+        case "bundle_phobia": return "https://bundlephobia.com/package/${args["package"]}";
+        case "word_count": final w = (args["text"] as String?)?.split(RegExp(r'\s+')).length ?? 0; return "Words: $w";
+        case "token_count": return "~${((args["text"] as String?)?.length ?? 0) ~/ 4} tokens";
+        case "code_stats": return await _codeStats(args["project"]);
+        case "complexity_report": return "Use analyze_project.";
+        case "test_coverage": return "Use run_command: npx vitest --coverage";
+        case "compare_branches": return await _compareBranches(args["project"], args["base"], args["head"]);
+        case "generate_changelog": if (gitService != null) return DocumentationService.generateChangelog(await gitService!.getLog(limit: 50)); return "Git not configured.";
+        case "generate_release_notes": return "Use run_command: gh release create";
+        case "run_task": final e = AgentTaskLibrary.tasks[args["task_id"]]; return e != null ? e["desc"]! : "Unknown task. Use list_tasks.";
+        case "list_tasks": return _listTasks(args["category"] ?? "all");
+        case "naming_convention": return "files=kebab-case, funcs=camelCase, classes=PascalCase";
+        case "index_suggestion": return "Index columns in WHERE/JOIN/ORDER BY. Use EXPLAIN ANALYZE on slow queries.";
+        case "seed_data_gen": return _genMock("sql", args["count"] ?? 10);
+        case "sql_migration_gen": return "-- Up\nCREATE TABLE ${args["table"]} (${args["columns"]});\n-- Down\nDROP TABLE ${args["table"]};";
+        case "proto_gen": return "syntax = \"proto3\";\nservice ${args["service"]} {}";
+        case "graphql_schema_gen": return "type Query { ${args["types"]}: String }";
+        case "swagger_gen": return "openapi: 3.0.0\ninfo:\n  title: ${args["title"]}\n  version: ${args["version"] ?? "1.0.0"}";
+        case "json_schema_gen": return "Use run_command: npx json-schema-generator";
+        case "meta_tags": return "<title>${args["title"]}</title>\n<meta name=\"description\" content=\"${args["description"]}\">";
+        case "css_reset": return "*{margin:0;padding:0;box-sizing:border-box}";
+        case "detect_language": return _detectLang(args["project"], args["file_path"]);
+        case "ascii_tree": return await _asciiTree(args["project"], args["max_depth"] ?? 3);
+        case "plantuml_render": case "mermaid_render": return "Paste at https://mermaid.live/ or https://plantuml.com/";
+        case "generate_dockerfile": return _genDockerfile(args["lang"], args["port"] ?? 3000);
+        case "generate_nginx_config": return _genNginx(args["type"], args["domain"], args["port"] ?? 80);
+        case "generate_pm2_config": case "generate_systemd": return "Use run_command for system service setup.";
+        case "generate_editorconfig": return "root = true\n[*]\nend_of_line = lf\ninsert_final_newline = true";
+        case "generate_gitattributes": return "* text=auto";
+        case "generate_contributing": return "# Contributing\n1. Fork 2. Branch 3. PR";
+        case "generate_codeowners": return args["owners"] as String? ?? "# CODEOWNERS";
+        case "generate_badges": return "https://shields.io";
+        case "generate_sitemap": return "<urlset><url><loc>${args["base_url"]}</loc></url></urlset>";
+        case "generate_robots": return args["allow_all"] == true ? "User-agent: *\nAllow: /" : "User-agent: *\nDisallow: /";
+        case "generate_htaccess": return _genHtaccess(args["type"]);
+        case "generate_makefile": return ".PHONY: ${args["targets"] ?? "build"}\nall: build";
+        case "git_tag": return await _gitTag(args["project"], args["action"], args["name"] ?? "");
+        case "git_cherry_pick": return await _gitCherry(args["project"], args["hash"]);
+        case "git_revert": return await _gitRevert(args["project"], args["hash"]);
+        case "git_squash": return "Use run_command: git rebase -i HEAD~${args["count"]}";
+        case "docker_build": case "docker_run": case "docker_logs": case "k8s_apply": case "k8s_pods": case "terraform_plan": case "terraform_apply": case "env_encrypt": case "env_decrypt": case "url_shorten": case "http_headers": case "whois_lookup": case "ssl_check": case "search_github_trending": case "npm_downloads": return "Use run_command for this external operation.";
+        case "diff_two_files": try { final c1 = await StorageService.readFile(args["project"], args["file1"]); final c2 = await StorageService.readFile(args["project"], args["file2"]); return DiffService.unifiedDiff(c1, c2); } catch (e) { return "Diff failed: $e"; }
         default:
           return "Unknown tool: $name. Use list_tasks to see available tools.";
       }
