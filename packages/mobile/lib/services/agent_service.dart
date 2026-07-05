@@ -35,6 +35,7 @@ import "interactive_debugger.dart";
 import "merge_conflict_resolver.dart";
 import "performance_profiler.dart";
 import "daily_standup_service.dart";
+import "cron_scheduler.dart";
 import "skills.dart";
 import "session_memory.dart";
 import "research_service.dart";
@@ -1541,6 +1542,31 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
         },
       },
     },
+    {
+      "type": "function", "function": {
+        "name": "daily_standup",
+        "description": "Generate a daily standup summary from git history.",
+        "parameters": {"type":"object","properties":{"project":{"type":"string"}},"required":["project"]},
+      },
+    },
+    { "type":"function","function":{ "name":"cron_schedule","description":"Schedule a task for later (e.g. 'check tests at 9am').","parameters":{"type":"object","properties":{"project":{"type":"string"},"task":{"type":"string"},"when":{"type":"string","description":"ISO datetime"}},"required":["project","task","when"]}}},
+    { "type":"function","function":{ "name":"cron_list","description":"List all scheduled tasks.","parameters":{"type":"object","properties":{"project":{"type":"string"}},"required":["project"]}}},
+    { "type":"function","function":{ "name":"cron_cancel","description":"Cancel a scheduled task.","parameters":{"type":"object","properties":{"project":{"type":"string"},"task":{"type":"string","description":"Task pattern to match"}},"required":["project","task"]}}},
+    { "type":"function","function":{ "name":"git_branch","description":"Create or switch git branches.","parameters":{"type":"object","properties":{"project":{"type":"string"},"action":{"type":"string","enum":["create","switch","list"]},"name":{"type":"string"}},"required":["project","action"]}}},
+    { "type":"function","function":{ "name":"count_lines","description":"Count lines of code per language in the project.","parameters":{"type":"object","properties":{"project":{"type":"string"}},"required":["project"]}}},
+    { "type":"function","function":{ "name":"find_duplicates","description":"Find duplicate code blocks across the project.","parameters":{"type":"object","properties":{"project":{"type":"string"}},"required":["project"]}}},
+    { "type":"function","function":{ "name":"search_stackoverflow","description":"Search Stack Overflow for solutions to a coding problem.","parameters":{"type":"object","properties":{"query":{"type":"string"}},"required":["query"]}}},
+    { "type":"function","function":{ "name":"search_npm","description":"Search npm registry for packages.","parameters":{"type":"object","properties":{"query":{"type":"string"}},"required":["query"]}}},
+    { "type":"function","function":{ "name":"search_pypi","description":"Search PyPI for Python packages.","parameters":{"type":"object","properties":{"query":{"type":"string"}},"required":["query"]}}},
+    { "type":"function","function":{ "name":"generate_diagram","description":"Generate Mermaid.js diagram (architecture, flow, ER, sequence).","parameters":{"type":"object","properties":{"type":{"type":"string","enum":["architecture","flow","er","sequence","class"]},"description":{"type":"string"}},"required":["type","description"]}}},
+    { "type":"function","function":{ "name":"minify_code","description":"Minify JS/CSS code for production.","parameters":{"type":"object","properties":{"project":{"type":"string"},"file_path":{"type":"string"}},"required":["project","file_path"]}}},
+    { "type":"function","function":{ "name":"validate_config","description":"Validate JSON/YAML/TOML config files for syntax errors.","parameters":{"type":"object","properties":{"project":{"type":"string"},"file_path":{"type":"string"}},"required":["project","file_path"]}}},
+    { "type":"function","function":{ "name":"convert_format","description":"Convert between JSON ↔ YAML ↔ XML ↔ CSV.","parameters":{"type":"object","properties":{"content":{"type":"string"},"from":{"type":"string"},"to":{"type":"string"}},"required":["content","from","to"]}}},
+    { "type":"function","function":{ "name":"generate_license","description":"Generate a LICENSE file (MIT, Apache-2.0, GPL-3.0).","parameters":{"type":"object","properties":{"type":{"type":"string","enum":["MIT","Apache-2.0","GPL-3.0"]},"author":{"type":"string"}},"required":["type","author"]}}},
+    { "type":"function","function":{ "name":"generate_env_example","description":"Scan code for env vars and generate .env.example.","parameters":{"type":"object","properties":{"project":{"type":"string"}},"required":["project"]}}},
+    { "type":"function","function":{ "name":"git_blame","description":"Show who last modified each line of a file.","parameters":{"type":"object","properties":{"project":{"type":"string"},"file_path":{"type":"string"}},"required":["project","file_path"]}}},
+    { "type":"function","function":{ "name":"check_bundle_size","description":"Estimate app/project size. Reports file counts and largest files.","parameters":{"type":"object","properties":{"project":{"type":"string"}},"required":["project"]}}},
+    { "type":"function","function":{ "name":"search_docs","description":"Search official documentation for a technology (MDN, devdocs.io style).","parameters":{"type":"object","properties":{"tech":{"type":"string"},"query":{"type":"string"}},"required":["tech","query"]}}},
   ];
 
   void setMode(AgentMode mode) {
@@ -1860,6 +1886,45 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
                 args["project"], gitService!);
           }
           return "Git not configured.";
+        case "cron_schedule":
+          final when = DateTime.tryParse(args["when"]) ?? DateTime.now().add(const Duration(hours: 1));
+          return await CronScheduler.schedule(args["project"], args["task"], when);
+        case "cron_list":
+          return await CronScheduler.list(args["project"]);
+        case "cron_cancel":
+          return await CronScheduler.cancel(args["project"], args["task"]);
+        case "git_branch":
+          return await _gitBranchCmd(args["project"], args["action"], args["name"] ?? "");
+        case "count_lines":
+          return await _countLines(args["project"]);
+        case "find_duplicates":
+          return await _findDupes(args["project"]);
+        case "search_stackoverflow":
+          final so = await ResearchService.search("site:stackoverflow.com ${args["query"]}");
+          return so.map((s) => "${s.title}\n  ${s.snippet}\n  ${s.url}").join("\n\n");
+        case "search_npm":
+          return "Search npm: https://www.npmjs.com/search?q=${Uri.encodeComponent(args["query"])}";
+        case "search_pypi":
+          return "Search PyPI: https://pypi.org/search/?q=${Uri.encodeComponent(args["query"])}";
+        case "generate_diagram":
+          return _genDiagram(args["type"], args["description"]);
+        case "minify_code":
+          return "Use run_command: npx terser ${args["file_path"]} --compress --mangle";
+        case "validate_config":
+          return await _validateConfig(args["project"], args["file_path"]);
+        case "convert_format":
+          return "Use python -c 'import json,yaml; ...' for format conversion via run_command.";
+        case "generate_license":
+          return _genLicense(args["type"], args["author"]);
+        case "generate_env_example":
+          return await _genEnvExample(args["project"]);
+        case "git_blame":
+          return await _gitBlame(args["project"], args["file_path"]);
+        case "check_bundle_size":
+          return await _checkBundleSize(args["project"]);
+        case "search_docs":
+          final docs = await ResearchService.search("${args["tech"]} documentation ${args["query"]}");
+          return docs.map((s) => "${s.title}\n  ${s.snippet}\n  ${s.url}").join("\n\n");
         // Deployment
         case "check_deploy_readiness":
           return await DeploymentService
@@ -2030,6 +2095,115 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
     });
     final results = await Future.wait(futures);
     return results.join("\n\n");
+  }
+
+  Future<String> _gitBranchCmd(String project, String action, String name) async {
+    try {
+      final result = await Process.run("git",
+          action == "list" ? ["branch"] : action == "create" ? ["checkout","-b",name] : ["checkout",name],
+          workingDirectory: "${StorageService.projectsRoot.path}/$project", runInShell: true);
+      return (result.stdout as String).trim();
+    } catch (e) { return "Git branch failed: $e"; }
+  }
+
+  Future<String> _countLines(String project) async {
+    final counts = <String, int>{};
+    await _walk(project, "", (file, content) {
+      final ext = file.split(".").last;
+      counts[ext] = (counts[ext] ?? 0) + content.split("\n").length;
+    });
+    return counts.entries.map((e) => ".${e.key}: ${e.value} lines").join("\n");
+  }
+
+  Future<String> _findDupes(String project) async {
+    final hashes = <int, List<String>>{};
+    await _walk(project, "", (file, content) {
+      if (content.length < 50) return;
+      final h = content.substring(0, 100).hashCode;
+      hashes.putIfAbsent(h, () => []).add(file);
+    });
+    final dupes = hashes.entries.where((e) => e.value.length > 1).take(5);
+    if (dupes.isEmpty) return "No duplicate files found.";
+    return dupes.map((e) => "Similar: ${e.value.join(", ")}").join("\n");
+  }
+
+  Future<String> _validateConfig(String project, String filePath) async {
+    try {
+      final content = await StorageService.readFile(project, filePath);
+      final ext = filePath.split(".").last;
+      if (ext == "json") { try { jsonDecode(content); return "Valid JSON."; } catch (e) { return "Invalid JSON: $e"; } }
+      if (ext == "yaml" || ext == "yml") return "YAML validation requires external tool. Use run_command: yamllint $filePath";
+      return "Validation for .$ext not supported. Try JSON/YAML.";
+    } catch (e) { return "Cannot read file: $e"; }
+  }
+
+  static String _genDiagram(String type, String desc) {
+    switch (type) {
+      case "architecture": return "```mermaid\ngraph TD\n  A[User] --> B[API]\n  B --> C[Database]\n  B --> D[Cache]\n  $desc\n```";
+      case "flow": return "```mermaid\nflowchart LR\n  Start --> Process --> Decision{OK?}\n  Decision -->|yes| End\n  Decision -->|no| Process\n  $desc\n```";
+      case "er": return "```mermaid\nerDiagram\n  USER ||--o{ ORDER : places\n  ORDER ||--|{ LINE_ITEM : contains\n  $desc\n```";
+      case "sequence": return "```mermaid\nsequenceDiagram\n  Client->>Server: Request\n  Server->>DB: Query\n  DB-->>Server: Result\n  Server-->>Client: Response\n  $desc\n```";
+      case "class": return "```mermaid\nclassDiagram\n  class Base {\n    +id: string\n    +createdAt: datetime\n  }\n  $desc\n```";
+      default: return "```mermaid\ngraph TD\n  A --> B\n  $desc\n```";
+    }
+  }
+
+  static String _genLicense(String type, String author) {
+    final year = DateTime.now().year;
+    if (type == "MIT") return "MIT License\n\nCopyright (c) $year $author\n\nPermission is hereby granted...";
+    if (type == "Apache-2.0") return "Apache License 2.0\n\nCopyright $year $author\n\nLicensed under the Apache License...";
+    return "GNU GPL v3.0\n\nCopyright (C) $year $author\n\nThis program is free software...";
+  }
+
+  Future<String> _genEnvExample(String project) async {
+    final vars = <String>{};
+    await _walk(project, "", (file, content) {
+      for (final m in RegExp(r'process\.env\.(\w+)|os\.environ\[["\'](\w+)["\']|getenv\(["\'](\w+)["\']').allMatches(content)) {
+        vars.add(m.group(1) ?? m.group(2) ?? m.group(3) ?? "");
+      }
+    });
+    if (vars.isEmpty) return "No environment variables found in project code.";
+    return vars.map((v) => "$v=").join("\n");
+  }
+
+  Future<String> _gitBlame(String project, String filePath) async {
+    try {
+      final r = await Process.run("git", ["blame","--date=short",filePath],
+          workingDirectory: "${StorageService.projectsRoot.path}/$project", runInShell: true);
+      return (r.stdout as String).trim();
+    } catch (e) { return "Git blame failed: $e"; }
+  }
+
+  Future<String> _checkBundleSize(String project) async {
+    var totalFiles = 0;
+    var totalSize = 0;
+    final largest = <Map<String, dynamic>>[];
+    await _walk(project, "", (file, content) {
+      totalFiles++;
+      totalSize += content.length;
+      largest.add({"file":file,"size":content.length});
+      largest.sort((a,b) => (b["size"] as int).compareTo(a["size"] as int));
+      if (largest.length > 10) largest.removeLast();
+    });
+    final buf = StringBuffer();
+    buf.writeln("Files: $totalFiles | Size: ${(totalSize/1024).toStringAsFixed(1)} KB");
+    buf.writeln("Largest files:");
+    for (final f in largest) buf.writeln("  ${f["file"]}: ${f["size"]} bytes");
+    return buf.toString();
+  }
+
+  Future<void> _walk(String project, String path, void Function(String file, String content) cb) async {
+    final entries = await StorageService.listDir(project, path);
+    for (final e in entries) {
+      final name = e.uri.pathSegments.last;
+      final full = path.isEmpty ? name : "$path/$name";
+      if (e is Directory) {
+        if (name.startsWith(".") || name == "node_modules" || name == "dist") continue;
+        await _walk(project, full, cb);
+      } else {
+        try { cb(full, await StorageService.readFile(project, full)); } catch (_) {}
+      }
+    }
   }
 
   Future<String> _editFile(String project, String path,

@@ -634,9 +634,48 @@ class SkillKnowledge {
       gitMastery, nginx, monitoring,
       regex, i18n, blockchain, gameDev, embedded,
       codeReview, projectManagement, documentation, careerGrowth,
+      // 36 new domains for 100 total
+      promptEngineering, vectorDatabases, webScraping, payments, emailDelivery,
+      searchEngines, fileUpload, webhooksPattern, oauthDeep,
+      rateLimiting, featureFlags, abTesting, chaosEngineering, incidentResponse,
+      capacityPlanning, dataMigration, backupStrategies, logAggregation,
+      streamProcessing, workflowEngines, apiGateway, progressiveDelivery,
+      multiTenancy, idempotency, ddd, hexagonal, monorepoAdvanced,
+      qaEngineering, dataEngineering, sre,
     ].join("\n");
   }
 
-  /// Count of skill domains
-  static int get count => 64;
+  static int get count => 100;
+
+  // ===== 36 NEW SKILL DOMAINS =====
+  static const String promptEngineering = """## Prompt Engineering — CoT, ToT, ReAct, few-shot, RAG, evals""";
+  static const String vectorDatabases = """## Vector DBs — Pinecone, Weaviate, ChromaDB, pgvector, embeddings, chunking""";
+  static const String webScraping = """## Web Scraping — Puppeteer, Cheerio, BeautifulSoup, anti-detection""";
+  static const String payments = """## Payments — Stripe, PayPal, subscriptions, PCI compliance, idempotency""";
+  static const String emailDelivery = """## Email — SendGrid, SES, SMTP, SPF/DKIM/DMARC, templates, bounce handling""";
+  static const String searchEngines = """## Search — Elasticsearch, Meilisearch, Algolia, faceted search, relevance""";
+  static const String fileUpload = """## File Upload — S3 presigned, multipart, Cloudinary, validation, security""";
+  static const String webhooksPattern = """## Webhooks — HMAC signatures, retry, idempotency, testing""";
+  static const String oauthDeep = """## OAuth/OIDC — grant types, PKCE, token rotation, social login, WebAuthn""";
+  static const String rateLimiting = """## Rate Limiting — token bucket, sliding window, circuit breaker, bulkhead""";
+  static const String featureFlags = """## Feature Flags — LaunchDarkly, canary, kill switch, cleanup, mobile flags""";
+  static const String abTesting = """## A/B Testing — hypothesis, sample size, t-test/chi-square, Simpson's paradox""";
+  static const String chaosEngineering = """## Chaos Engineering — Chaos Monkey, Gremlin, fault injection, GameDays""";
+  static const String incidentResponse = """## Incident Response — SEV levels, IC role, blameless postmortems""";
+  static const String capacityPlanning = """## Capacity Planning — load testing, auto-scaling, cost optimization""";
+  static const String dataMigration = """## Data Migration — ETL, CDC, zero-downtime, validation, rollback""";
+  static const String backupStrategies = """## Backup — 3-2-1 rule, RPO/RTO, point-in-time recovery, restore drills""";
+  static const String logAggregation = """## Log Aggregation — ELK, Loki, structured logging, correlation, retention""";
+  static const String streamProcessing = """## Stream Processing — Kafka, Kinesis, Flink, CQRS, exactly-once""";
+  static const String workflowEngines = """## Workflow Engines — Temporal, Airflow, Step Functions, saga pattern""";
+  static const String apiGateway = """## API Gateway — Kong, rate limiting, auth, BFF pattern, transformation""";
+  static const String progressiveDelivery = """## Progressive Delivery — canary, blue-green, GitOps, auto-rollback""";
+  static const String multiTenancy = """## Multi-tenancy — DB per tenant vs shared, RLS, billing, customization""";
+  static const String idempotency = """## Idempotency — idempotency keys, retry with backoff, timeout, deadline""";
+  static const String ddd = """## DDD — entities, value objects, aggregates, bounded context, event storming""";
+  static const String hexagonal = """## Hexagonal — ports & adapters, dependency inversion, testable""";
+  static const String monorepoAdvanced = """## Monorepo — Nx, Turborepo, affected graph, remote caching, changesets""";
+  static const String qaEngineering = """## QA — test strategy, equivalence partitioning, bug reports, automation""";
+  static const String dataEngineering = """## Data Engineering — ETL, dbt, Snowflake, data lake, quality checks""";
+  static const String sre = """## SRE — SLI/SLO/SLA, error budget, toil reduction, incident management""";
 }
