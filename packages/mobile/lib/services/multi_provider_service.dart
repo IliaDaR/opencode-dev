@@ -3,60 +3,51 @@ import "dart:convert";
 import "package:http/http.dart" as http;
 import "settings_service.dart";
 
-/// Multi-provider support — Gemini (free tier!), OpenAI, Anthropic
-/// Falls back through providers if one fails
+/// Multi-provider support — 8 AI providers with automatic fallback
 class MultiProviderService {
   static const _deepseekApi = "https://api.deepseek.com/v1/chat/completions";
   static const _geminiApi = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
   static const _openaiApi = "https://api.openai.com/v1/chat/completions";
   static const _anthropicApi = "https://api.anthropic.com/v1/messages";
+  static const _groqApi = "https://api.groq.com/openai/v1/chat/completions";
+  static const _togetherApi = "https://api.together.xyz/v1/chat/completions";
+  static const _mistralApi = "https://api.mistral.ai/v1/chat/completions";
+  static const _cohereApi = "https://api.cohere.ai/v1/chat";
 
-  static String? _geminiKey;
-  static String? _openaiKey;
-  static String? _anthropicKey;
+  static String? _deepseekKey, _geminiKey, _openaiKey, _anthropicKey;
+  static String? _groqKey, _togetherKey, _mistralKey, _cohereKey;
 
   static void setGeminiKey(String key) => _geminiKey = key;
   static void setOpenAIKey(String key) => _openaiKey = key;
   static void setAnthropicKey(String key) => _anthropicKey = key;
+  static void setGroqKey(String key) => _groqKey = key;
+  static void setTogetherKey(String key) => _togetherKey = key;
+  static void setMistralKey(String key) => _mistralKey = key;
+  static void setCohereKey(String key) => _cohereKey = key;
 
-  /// Try providers in order, return first successful response
+  /// Try all providers in order, return first success
   static Future<Map<String, dynamic>?> tryProviders(
       List<Map<String, dynamic>> messages,
-      {List<Map<String, dynamic>>? tools,
-      double temperature = 0.2,
-      int maxTokens = 4096}) async {
+      {List<Map<String, dynamic>>? tools, double temperature = 0.2, int maxTokens = 4096}) async {
 
     // 1. DeepSeek (primary)
-    try {
-      final r = await _callDeepSeek(messages, tools: tools, temp: temperature, maxTokens: maxTokens);
-      if (r != null) return r;
-    } catch (_) {}
+    try { final r = await _callDeepSeek(messages, tools: tools, temp: temperature, maxTokens: maxTokens); if (r != null) return r; } catch (_) {}
+    // 2. Gemini (free tier)
+    if (_geminiKey != null) { try { final r = await _callGemini(messages, temp: temperature, maxTokens: maxTokens); if (r != null) return r; } catch (_) {} }
+    // 3. Groq (fastest, free tier)
+    if (_groqKey != null) { try { final r = await _callGroq(messages, tools: tools, temp: temperature, maxTokens: maxTokens); if (r != null) return r; } catch (_) {} }
+    // 4. Together AI (cheap)
+    if (_togetherKey != null) { try { final r = await _callTogether(messages, tools: tools, temp: temperature, maxTokens: maxTokens); if (r != null) return r; } catch (_) {} }
+    // 5. Mistral
+    if (_mistralKey != null) { try { final r = await _callMistral(messages, tools: tools, temp: temperature, maxTokens: maxTokens); if (r != null) return r; } catch (_) {} }
+    // 6. OpenAI
+    if (_openaiKey != null) { try { final r = await _callOpenAI(messages, tools: tools, temp: temperature, maxTokens: maxTokens); if (r != null) return r; } catch (_) {} }
+    // 7. Anthropic
+    if (_anthropicKey != null) { try { final r = await _callAnthropic(messages, tools: tools, temp: temperature, maxTokens: maxTokens); if (r != null) return r; } catch (_) {} }
+    // 8. Cohere
+    if (_cohereKey != null) { try { final r = await _callCohere(messages, temp: temperature, maxTokens: maxTokens); if (r != null) return r; } catch (_) {} }
 
-    // 2. Gemini (free tier — 1500 req/day)
-    if (_geminiKey != null) {
-      try {
-        final r = await _callGemini(messages, temp: temperature, maxTokens: maxTokens);
-        if (r != null) return r;
-      } catch (_) {}
-    }
-
-    // 3. OpenAI
-    if (_openaiKey != null) {
-      try {
-        final r = await _callOpenAI(messages, tools: tools, temp: temperature, maxTokens: maxTokens);
-        if (r != null) return r;
-      } catch (_) {}
-    }
-
-    // 4. Anthropic
-    if (_anthropicKey != null) {
-      try {
-        final r = await _callAnthropic(messages, tools: tools, temp: temperature, maxTokens: maxTokens);
-        if (r != null) return r;
-      } catch (_) {}
-    }
-
-    return null; // All providers failed
+    return null;
   }
 
   static Future<Map<String, dynamic>?> _callDeepSeek(
@@ -125,7 +116,30 @@ class MultiProviderService {
     return null;
   }
 
-  static Future<Map<String, dynamic>?> _callAnthropic(
+  static Future<Map<String, dynamic>?> _callGroq(List<Map<String, dynamic>> messages, {List<Map<String, dynamic>>? tools, double temp = 0.2, int maxTokens = 4096}) async {
+    final body = jsonEncode({"model":"llama-3.3-70b-versatile","messages":messages,if(tools!=null)"tools":tools,"temperature":temp,"max_tokens":maxTokens});
+    final res = await http.post(Uri.parse(_groqApi),headers:{"Content-Type":"application/json","Authorization":"Bearer $_groqKey"},body:body).timeout(const Duration(seconds:30));
+    if(res.statusCode==200)return jsonDecode(res.body);
+    return null;
+  }
+  static Future<Map<String, dynamic>?> _callTogether(List<Map<String, dynamic>> messages, {List<Map<String, dynamic>>? tools, double temp = 0.2, int maxTokens = 4096}) async {
+    final body = jsonEncode({"model":"deepseek-ai/DeepSeek-V3","messages":messages,if(tools!=null)"tools":tools,"temperature":temp,"max_tokens":maxTokens});
+    final res = await http.post(Uri.parse(_togetherApi),headers:{"Content-Type":"application/json","Authorization":"Bearer $_togetherKey"},body:body).timeout(const Duration(seconds:60));
+    if(res.statusCode==200)return jsonDecode(res.body);
+    return null;
+  }
+  static Future<Map<String, dynamic>?> _callMistral(List<Map<String, dynamic>> messages, {List<Map<String, dynamic>>? tools, double temp = 0.2, int maxTokens = 4096}) async {
+    final body = jsonEncode({"model":"mistral-large-latest","messages":messages,if(tools!=null)"tools":tools,"temperature":temp,"max_tokens":maxTokens});
+    final res = await http.post(Uri.parse(_mistralApi),headers:{"Content-Type":"application/json","Authorization":"Bearer $_mistralKey"},body:body).timeout(const Duration(seconds:30));
+    if(res.statusCode==200)return jsonDecode(res.body);
+    return null;
+  }
+  static Future<Map<String, dynamic>?> _callCohere(List<Map<String, dynamic>> messages, {double temp = 0.2, int maxTokens = 4096}) async {
+    final body = jsonEncode({"model":"command-r-plus","messages":messages,"temperature":temp,"max_tokens":maxTokens});
+    final res = await http.post(Uri.parse(_cohereApi),headers:{"Content-Type":"application/json","Authorization":"Bearer $_cohereKey"},body:body).timeout(const Duration(seconds:30));
+    if(res.statusCode==200)return jsonDecode(res.body);
+    return null;
+  }
       List<Map<String, dynamic>> messages,
       {List<Map<String, dynamic>>? tools, double temp = 0.2, int maxTokens = 4096}) async {
     final body = jsonEncode({
