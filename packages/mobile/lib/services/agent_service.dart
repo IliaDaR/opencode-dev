@@ -22,6 +22,10 @@ import "diff_service.dart";
 import "error_recovery_service.dart";
 import "code_index.dart";
 import "execution_plan_service.dart";
+import "self_review_service.dart";
+import "autonomous_loop.dart";
+import "project_onboarding.dart";
+import "error_learning_service.dart";
 import "skills.dart";
 import "session_memory.dart";
 import "research_service.dart";
@@ -159,6 +163,16 @@ class AgentService {
     final profileCtx = await UserProfile.toContextPrompt();
     messages.insert(
         1, Message(role: "system", content: profileCtx));
+
+    // Inject learned error patterns
+    try {
+      final errors =
+          await ErrorLearningService.getContext(projectName);
+      if (errors.isNotEmpty) {
+        messages.insert(
+            1, Message(role: "system", content: errors));
+      }
+    } catch (_) {}
   }
 
   /// Load saved session from disk
@@ -227,13 +241,7 @@ Plan systems at hyper-scale. Think about failure modes before happy path.
 """,
       AgentMode.code => """
 ## MODE: HYPER-ENGINEER
-You write code at a level beyond senior engineers. Zero defects. Perfect patterns.
-- Read code FIRST. Understand the ENTIRE context before touching anything.
-- Write code that handles EVERY edge case: null, undefined, empty, overflow, timeout, concurrency.
-- Self-review: after writing, read your code as a reviewer. Find your own bugs.
-- Delegate to scribe sub-agent for non-trivial implementations.
-- After implementing: diagnose_file to check quality. Fix all issues before committing.
-- Commit with meaningful messages after EACH logical unit. Never batch unrelated changes.
+${AutonomousLoop.systemPrompt}
 """,
       AgentMode.debug => """
 ## MODE: DEBUGGER
@@ -1330,13 +1338,42 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
       "type": "function",
       "function": {
         "name": "create_plan",
-        "description": "Create a structured execution plan for complex tasks before implementing. Plan first, then execute.",
+        "description": "Create a structured execution plan for complex tasks.",
         "parameters": {
           "type": "object",
           "properties": {
-            "task": {"type": "string", "description": "Task description"},
+            "task": {"type": "string"},
           },
           "required": ["task"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "self_review",
+        "description": "Review your own code changes before committing. Checks for bugs, style issues, and anti-patterns. Use before git_sync.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "project": {"type": "string"},
+            "file_path": {"type": "string", "description": "Specific file to review (optional, omit for all changed files)"},
+          },
+          "required": ["project"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "project_summary",
+        "description": "Get a comprehensive summary of a project: tech stack, dependencies, structure, available commands. Use when opening a project for the first time.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "project": {"type": "string"},
+          },
+          "required": ["project"],
         },
       },
     },
@@ -1599,6 +1636,19 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
         case "create_plan":
           return ExecutionPlanService.createPlan(
               args["task"], {});
+        case "self_review":
+          if (args["file_path"] != null) {
+            return await SelfReviewService.quickCheck(
+                args["project"], args["file_path"]);
+          }
+          if (gitService != null) {
+            return await SelfReviewService.reviewBeforeCommit(
+                args["project"], gitService!);
+          }
+          return "Git not configured for self-review.";
+        case "project_summary":
+          return await ProjectOnboarding.summarize(
+              args["project"]);
         // Deployment
         case "check_deploy_readiness":
           return await DeploymentService
