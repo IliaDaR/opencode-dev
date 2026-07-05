@@ -2105,7 +2105,7 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
           final cat = (args["category"] as String?) ?? "all";
           final tasks = AgentTaskLibrary.tasks.entries
               .where((e) => cat == "all" || e.key.startsWith(cat))
-              .map((e) => "- ${e.key}: ${e["desc"]}")
+              .map((e) => "- ${e.key}: ${e.value["desc"]}")
               .join("\n");
           return tasks.isEmpty ? "No tasks found for category: $cat" : tasks;
         case "naming_convention": return "files=kebab-case, funcs=camelCase, classes=PascalCase";
@@ -2131,7 +2131,7 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
         case "generate_badges": return "https://shields.io";
         case "generate_sitemap": return "<urlset><url><loc>${args["base_url"]}</loc></url></urlset>";
         case "generate_robots": return args["allow_all"] == true ? "User-agent: *\nAllow: /" : "User-agent: *\nDisallow: /";
-        case "generate_htaccess": return args["type"] == "spa" ? "RewriteEngine On\nRewriteBase /\nRewriteRule ^index\\.html$ - [L]\nRewriteCond %{REQUEST_FILENAME} !-f\nRewriteCond %{REQUEST_FILENAME} !-d\nRewriteRule . /index.html [L]" : "RewriteEngine On";
+        case "generate_htaccess": return args["type"] == "spa" ? "RewriteEngine On\nRewriteBase /\nRewriteRule ^index\\.html\$ - [L]\nRewriteCond %{REQUEST_FILENAME} !-f\nRewriteCond %{REQUEST_FILENAME} !-d\nRewriteRule . /index.html [L]" : "RewriteEngine On";
         case "generate_makefile": return ".PHONY: ${args["targets"] ?? "build"}\nall: build";
         case "git_tag": return "Use run_command: git tag ${args["name"]} && git push --tags";
         case "git_cherry_pick": return "Use run_command: git cherry-pick ${args["hash"]}";
