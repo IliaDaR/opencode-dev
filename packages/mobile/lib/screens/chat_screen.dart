@@ -1,6 +1,7 @@
 import "dart:async";
 import "dart:io";
 import "package:flutter/material.dart";
+import "package:http/http.dart" as http;
 import "package:image_picker/image_picker.dart";
 import "package:speech_to_text/speech_to_text.dart" as stt;
 import "../services/agent_service.dart";
@@ -92,18 +93,23 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _connectGithub(String token, String user) async {
     SettingsService.githubToken = token;
     SettingsService.githubUser = user;
-    _addSystem("GitHub connected as $user");
+    _addSystem("GitHub saved. Verification: checking...");
 
-    // Try listing repos
     try {
-      final gs = GitService(
-        projectName: "_temp_",
-        repoUrl: "https://github.com/$user/dummy.git",
-        token: token,
-      );
-      _addSystem("GitHub token verified. Use /clone <repo> to start working.");
+      final response = await http.get(
+        Uri.parse("https://api.github.com/user"),
+        headers: {
+          "Authorization": "Bearer $token",
+          "Accept": "application/vnd.github+json",
+        },
+      ).timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        _addSystem("GitHub connected as $user ✓");
+      } else {
+        _addSystem("GitHub token may be invalid (status ${response.statusCode}). Try /clone to verify.");
+      }
     } catch (e) {
-      _addSystem("GitHub token saved. Verify it's correct if clone fails.");
+      _addSystem("Cannot verify token (no internet?). Saved locally. Try /clone to verify.");
     }
   }
 
@@ -193,7 +199,7 @@ class _ChatScreenState extends State<ChatScreen> {
         text += chunk;
         _addAssistant(text);
       }
-      if (_messages.isNotEmpty && _messages.last.isStreaming) {
+      if (_messages.isNotEmpty && _messages.last.isStreaming && mounted) {
         setState(() => _messages.last.isStreaming = false);
       }
     } catch (e) {
@@ -411,7 +417,7 @@ class _ChatScreenState extends State<ChatScreen> {
         assistantText += chunk;
         _addAssistant(assistantText);
       }
-      if (_messages.isNotEmpty && _messages.last.isStreaming) {
+      if (_messages.isNotEmpty && _messages.last.isStreaming && mounted) {
         setState(() => _messages.last.isStreaming = false);
       }
     } catch (e) {

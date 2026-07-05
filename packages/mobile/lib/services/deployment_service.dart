@@ -90,7 +90,7 @@ class DeploymentService {
     buf.writeln("## Deployment Readiness: $project\n");
     buf.writeln("Passed: $pass | Failed: $fail\n");
     checks.forEach((c) => buf.writeln(c));
-    buf.writeln("\nScore: ${pass * 100 ~/ (pass + fail)}%");
+    buf.writeln("\nScore: ${(pass + fail) > 0 ? pass * 100 ~/ (pass + fail) : 0}%");
 
     return buf.toString();
   }

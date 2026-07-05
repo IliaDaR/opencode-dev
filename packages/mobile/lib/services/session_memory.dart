@@ -32,8 +32,9 @@ class SessionMemory {
 
     try {
       final raw = await file.readAsString();
-      final list = jsonDecode(raw) as List;
-      return list.map((m) {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return null;
+      return decoded.map((m) {
         return Message(
           role: m["role"] ?? "user",
           content: m["content"] ?? "",

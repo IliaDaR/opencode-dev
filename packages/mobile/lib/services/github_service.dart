@@ -12,7 +12,7 @@ class GitHubService {
         "Content-Type": "application/json",
       };
 
-  static Future<Map<String, dynamic>> _get(String endpoint,
+  static Future<dynamic> _get(String endpoint,
       {Map<String, String>? params}) async {
     var uri = Uri.parse("$_apiBase$endpoint");
     if (params != null) {

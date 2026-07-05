@@ -167,8 +167,11 @@ class AgentService {
       }
     }
 
-    messages.insert(
-        1, Message(role: "system", content: ctx.toString()));
+    if (messages.length > 1) {
+      messages.insert(1, Message(role: "system", content: ctx.toString()));
+    } else {
+      messages.add(Message(role: "system", content: ctx.toString()));
+    }
 
     // Inject user profile
     final profileCtx = await UserProfile.toContextPrompt();
@@ -1784,7 +1787,7 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
               args["old_string"],
               args["new_string"]);
         case "create_tasks":
-          final tasks = args["tasks"] as List;
+          final tasks = (args["tasks"] as List?) ?? [];
           final buf = StringBuffer();
           buf.writeln("## Task List\n");
           for (final t in tasks) {
@@ -1889,7 +1892,7 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
           return await FormatterService.format(
               args["project"], args["file_path"]);
         case "batch_execute":
-          return await _batchExecute(args["calls"] as List);
+          return await _batchExecute((args["calls"] as List?) ?? []);
         case "mcp_call":
           return await McpClient.quickCall(
               url: args["url"],
@@ -2306,10 +2309,10 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
     await _walk(project, "", (file, content) {
       totalFiles++;
       totalSize += content.length;
-      largest.add({"file":file,"size":content.length});
-      largest.sort((a,b) => (b["size"] as int).compareTo(a["size"] as int));
-      if (largest.length > 10) largest.removeLast();
+      largest.add({"file": file, "size": content.length});
     });
+    largest.sort((a, b) => (b["size"] as int).compareTo(a["size"] as int));
+    if (largest.length > 10) largest.removeRange(10, largest.length);
     final buf = StringBuffer();
     buf.writeln("Files: $totalFiles | Size: ${(totalSize/1024).toStringAsFixed(1)} KB");
     buf.writeln("Largest files:");
