@@ -1649,9 +1649,9 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
     { "type":"function","function":{ "name":"list_tasks","description":"List all available pre-built tasks in the library. Filter by category: daily, weekly, precommit, deploy, maintain, ideas, all.","parameters":{"type":"object","properties":{"category":{"type":"string","enum":["daily","weekly","precommit","deploy","maintain","ideas","all"]}},"required":[]}}},
   ];
 
-  void setMode(AgentMode mode) {
+  Future<void> setMode(AgentMode mode) async {
     currentMode = mode;
-    reset();
+    await reset();
   }
 
   AgentMode _detectMode(String userMessage) {

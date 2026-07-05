@@ -245,7 +245,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void _addToolCall(String tool, String args, String result) {
     if (!mounted) return;
     setState(() {
-      final idx = _messages.indexWhere((m) => m.type == UIMessageType.toolPending && m.toolName == tool);
+      final idx = _messages.lastIndexWhere((m) => m.type == UIMessageType.toolPending && m.toolName == tool);
       if (idx >= 0) {
         _messages[idx] = UIMessage(
             id: _messages[idx].id, type: UIMessageType.toolResult,
