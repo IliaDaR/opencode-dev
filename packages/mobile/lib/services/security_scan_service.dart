@@ -66,7 +66,7 @@ class SecurityScanService {
     }
 
     // A5: Security Misconfiguration
-    if (RegExp(r'debug\s*=\s*True|DEBUG\s*=\s*true|NODE_ENV\s*=\s*["\']development["\']').hasMatch(content)) {
+    if (RegExp("debug\\s*=\\s*True|DEBUG\\s*=\\s*true|NODE_ENV\\s*=\\s*[\"']development[\"']").hasMatch(content)) {
       issues.add("⚠️ A5: Debug mode enabled — should be off in production");
     }
 
