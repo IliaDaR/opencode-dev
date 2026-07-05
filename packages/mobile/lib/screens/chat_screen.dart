@@ -63,10 +63,15 @@ class _ChatScreenState extends State<ChatScreen> {
     if (hasSession) {
       _addSystem("Session restored — continuing where we left off");
       for (final m in _agent.messages) {
-        if (m.role == "user") _addUser(m.content);
+        if (m.role == "user") setState(() => _messages.add(UIMessage(id: ++_messageIdCounter, type: UIMessageType.user, content: m.content)));
         if (m.role == "assistant" && m.content.isNotEmpty) _addAssistant(m.content);
       }
     } else {
+      final hasKey = SettingsService.deepseekApiKey.isNotEmpty;
+      _addAssistant(hasKey
+          ? "I'm OpenCode. What are we working on?\n\nCommands: /clone /github /config /files /help"
+          : "API key set. Use /github <token> <user> to connect GitHub, then /clone <repo>.");
+    }
   }
 
   Future<void> _connectGithub(String token, String user) async {
