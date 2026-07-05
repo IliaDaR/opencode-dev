@@ -141,6 +141,7 @@ class MultiProviderService {
     return null;
   }
   static Future<Map<String, dynamic>?> _callAnthropic(
+      List<Map<String, dynamic>> messages,
       {List<Map<String, dynamic>>? tools, double temp = 0.2, int maxTokens = 4096}) async {
     final body = jsonEncode({
       "model": "claude-3-haiku-20240307",
