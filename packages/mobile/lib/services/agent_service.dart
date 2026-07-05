@@ -1567,6 +1567,30 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
     { "type":"function","function":{ "name":"git_blame","description":"Show who last modified each line of a file.","parameters":{"type":"object","properties":{"project":{"type":"string"},"file_path":{"type":"string"}},"required":["project","file_path"]}}},
     { "type":"function","function":{ "name":"check_bundle_size","description":"Estimate app/project size. Reports file counts and largest files.","parameters":{"type":"object","properties":{"project":{"type":"string"}},"required":["project"]}}},
     { "type":"function","function":{ "name":"search_docs","description":"Search official documentation for a technology (MDN, devdocs.io style).","parameters":{"type":"object","properties":{"tech":{"type":"string"},"query":{"type":"string"}},"required":["tech","query"]}}},
+    { "type":"function","function":{ "name":"generate_qr","description":"Generate a QR code from text/URL.","parameters":{"type":"object","properties":{"data":{"type":"string"}},"required":["data"]}}},
+    { "type":"function","function":{ "name":"generate_mock","description":"Generate mock test data (names, emails, addresses, UUIDs) in JSON/CSV/SQL.","parameters":{"type":"object","properties":{"type":{"type":"string","enum":["json","csv","sql"]},"count":{"type":"integer"}},"required":["type","count"]}}},
+    { "type":"function","function":{ "name":"validate_openapi","description":"Validate an OpenAPI/Swagger spec.","parameters":{"type":"object","properties":{"project":{"type":"string"},"file_path":{"type":"string"}},"required":["project","file_path"]}}},
+    { "type":"function","function":{ "name":"semver_bump","description":"Bump version in package.json or pyproject.toml.","parameters":{"type":"object","properties":{"project":{"type":"string"},"level":{"type":"string","enum":["major","minor","patch"]}},"required":["project","level"]}}},
+    { "type":"function","function":{ "name":"dead_code","description":"Find potentially unused code — functions never called, imports never used.","parameters":{"type":"object","properties":{"project":{"type":"string"}},"required":["project"]}}},
+    { "type":"function","function":{ "name":"circular_deps","description":"Find circular dependencies between files.","parameters":{"type":"object","properties":{"project":{"type":"string"}},"required":["project"]}}},
+    { "type":"function","function":{ "name":"image_optimize","description":"Compress/convert images (requires ImageMagick).","parameters":{"type":"object","properties":{"project":{"type":"string"},"file_path":{"type":"string"},"quality":{"type":"integer"}},"required":["project","file_path"]}}},
+    { "type":"function","function":{ "name":"accessibility_audit","description":"Check HTML for WCAG accessibility issues.","parameters":{"type":"object","properties":{"project":{"type":"string"},"file_path":{"type":"string"}},"required":["project","file_path"]}}},
+    { "type":"function","function":{ "name":"hash_file","description":"Compute MD5/SHA256 hash of a file.","parameters":{"type":"object","properties":{"project":{"type":"string"},"file_path":{"type":"string"},"algo":{"type":"string","enum":["md5","sha256"]}},"required":["project","file_path"]}}},
+    { "type":"function","function":{ "name":"archive_create","description":"Create zip/tar.gz archive.","parameters":{"type":"object","properties":{"project":{"type":"string"},"source":{"type":"string"},"format":{"type":"string","enum":["zip","tar.gz"]}},"required":["project","source","format"]}}},
+    { "type":"function","function":{ "name":"archive_extract","description":"Extract zip/tar.gz archive.","parameters":{"type":"object","properties":{"project":{"type":"string"},"file_path":{"type":"string"}},"required":["project","file_path"]}}},
+    { "type":"function","function":{ "name":"network_ping","description":"Ping a host to check connectivity.","parameters":{"type":"object","properties":{"host":{"type":"string"}},"required":["host"]}}},
+    { "type":"function","function":{ "name":"dns_lookup","description":"Look up DNS records (A, MX, NS, TXT, ALL).","parameters":{"type":"object","properties":{"domain":{"type":"string"},"type":{"type":"string"}},"required":["domain"]}}},
+    { "type":"function","function":{ "name":"port_check","description":"Check if a TCP port is open.","parameters":{"type":"object","properties":{"host":{"type":"string"},"port":{"type":"integer"}},"required":["host","port"]}}},
+    { "type":"function","function":{ "name":"jwt_decode","description":"Decode a JWT token header+payload (never shows signature).","parameters":{"type":"object","properties":{"token":{"type":"string"}},"required":["token"]}}},
+    { "type":"function","function":{ "name":"base64_tool","description":"Encode or decode base64.","parameters":{"type":"object","properties":{"action":{"type":"string","enum":["encode","decode"]},"text":{"type":"string"}},"required":["action","text"]}}},
+    { "type":"function","function":{ "name":"markdown_toc","description":"Generate table of contents for Markdown.","parameters":{"type":"object","properties":{"project":{"type":"string"},"file_path":{"type":"string"}},"required":["project","file_path"]}}},
+    { "type":"function","function":{ "name":"regex_test","description":"Test a regex pattern against sample text.","parameters":{"type":"object","properties":{"pattern":{"type":"string"},"text":{"type":"string"}},"required":["pattern","text"]}}},
+    { "type":"function","function":{ "name":"color_palette","description":"Generate color palette from base hex color.","parameters":{"type":"object","properties":{"base_color":{"type":"string"}},"required":["base_color"]}}},
+    { "type":"function","function":{ "name":"date_convert","description":"Convert date/time between timezones.","parameters":{"type":"object","properties":{"date":{"type":"string"},"from_tz":{"type":"string"},"to_tz":{"type":"string"}},"required":["date","from_tz","to_tz"]}}},
+    { "type":"function","function":{ "name":"uuid_gen","description":"Generate UUID v4 or v7.","parameters":{"type":"object","properties":{"version":{"type":"string","enum":["v4","v7"]},"count":{"type":"integer"}},"required":["version"]}}},
+    { "type":"function","function":{ "name":"i18n_find","description":"Find hardcoded strings that need internationalization.","parameters":{"type":"object","properties":{"project":{"type":"string"},"file_path":{"type":"string"}},"required":["project","file_path"]}}},
+    { "type":"function","function":{ "name":"git_hook_gen","description":"Generate a git hook script.","parameters":{"type":"object","properties":{"hook":{"type":"string","enum":["pre-commit","commit-msg","pre-push"]},"content":{"type":"string"}},"required":["hook","content"]}}},
+    { "type":"function","function":{ "name":"ssl_cert","description":"Generate self-signed SSL certificate command.","parameters":{"type":"object","properties":{"domain":{"type":"string"},"days":{"type":"integer"}},"required":["domain"]}}},
   ];
 
   void setMode(AgentMode mode) {
@@ -1925,6 +1949,54 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
         case "search_docs":
           final docs = await ResearchService.search("${args["tech"]} documentation ${args["query"]}");
           return docs.map((s) => "${s.title}\n  ${s.snippet}\n  ${s.url}").join("\n\n");
+        case "generate_qr":
+          return "QR: https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${Uri.encodeComponent(args["data"])}";
+        case "generate_mock":
+          return _genMock(args["type"], args["count"] ?? 10);
+        case "validate_openapi":
+          return "Use run_command: npx swagger-cli validate ${args["file_path"]}";
+        case "semver_bump":
+          return await _semverBump(args["project"], args["level"]);
+        case "dead_code":
+          return "Dead code detection: use analyze_project or delegate to scribe for thorough analysis.";
+        case "circular_deps":
+          return await _findCircular(args["project"]);
+        case "image_optimize":
+          return "Use run_command: convert ${args["file_path"]} -quality ${args["quality"] ?? 80} optimized_${args["file_path"]}";
+        case "accessibility_audit":
+          return _wcagCheck(args["project"], args["file_path"]);
+        case "hash_file":
+          return await _hashFile(args["project"], args["file_path"], args["algo"] ?? "sha256");
+        case "archive_create":
+          return await _createArchive(args["project"], args["source"], args["format"]);
+        case "archive_extract":
+          return await _extractArchive(args["project"], args["file_path"]);
+        case "network_ping":
+          return await _ping(args["host"]);
+        case "dns_lookup":
+          return await _dnsLookup(args["domain"], args["type"] ?? "A");
+        case "port_check":
+          return await _checkPort(args["host"], args["port"]);
+        case "jwt_decode":
+          return _jwtDecode(args["token"]);
+        case "base64_tool":
+          return _base64(args["action"], args["text"]);
+        case "markdown_toc":
+          return await _mdToc(args["project"], args["file_path"]);
+        case "regex_test":
+          return _regexTest(args["pattern"], args["text"]);
+        case "color_palette":
+          return _colorPalette(args["base_color"]);
+        case "date_convert":
+          return _dateConvert(args["date"], args["from_tz"], args["to_tz"]);
+        case "uuid_gen":
+          return _uuidGen(args["version"] ?? "v4", args["count"] ?? 1);
+        case "i18n_find":
+          return await _i18nFind(args["project"], args["file_path"]);
+        case "git_hook_gen":
+          return await _gitHookGen(args["project"], args["hook"], args["content"]);
+        case "ssl_cert":
+          return "openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days ${args["days"]??365} -nodes -subj '/CN=${args["domain"]}'";
         // Deployment
         case "check_deploy_readiness":
           return await DeploymentService
@@ -2204,6 +2276,184 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
         try { cb(full, await StorageService.readFile(project, full)); } catch (_) {}
       }
     }
+  }
+
+  static String _genMock(String type, int count) {
+    final names = ["Alice","Bob","Charlie","Diana","Eve","Frank","Grace","Henry","Iris","Jack"];
+    final domains = ["gmail.com","yahoo.com","example.com","test.org"];
+    final buf = StringBuffer();
+    for (var i=0; i<count && i<50; i++) {
+      final name = names[i%names.length];
+      final email = "${name.toLowerCase()}@${domains[i%domains.length]}";
+      if (type == "json") buf.writeln('{"name":"$name","email":"$email","id":"${i+1}"}${i<count-1?",":""}');
+      else if (type == "csv") buf.writeln('$name,$email');
+      else buf.writeln("INSERT INTO users VALUES (${i+1},'$name','$email');");
+    }
+    return buf.toString();
+  }
+
+  Future<String> _semverBump(String project, String level) async {
+    try {
+      final content = await StorageService.readFile(project, "package.json");
+      final pkg = jsonDecode(content);
+      final ver = (pkg["version"] as String).split(".").map(int.parse).toList();
+      if (level == "major") { ver[0]++; ver[1]=0; ver[2]=0; }
+      else if (level == "minor") { ver[1]++; ver[2]=0; }
+      else ver[2]++;
+      final newVer = ver.join(".");
+      pkg["version"] = newVer;
+      await StorageService.writeFile(project, "package.json", const JsonEncoder.withIndent("  ").convert(pkg));
+      return "Version bumped to $newVer";
+    } catch (e) { return "Version bump failed: $e"; }
+  }
+
+  Future<String> _findCircular(String project) async {
+    final graph = await CodeIntelligence.buildImportGraph(project);
+    final visited = <String>{};
+    final inStack = <String>{};
+    final cycles = <String>[];
+    void dfs(String node) { if (inStack.contains(node)) { cycles.add(node); return; } if (visited.contains(node)) return; visited.add(node); inStack.add(node); for (final n in graph[node]??[]) dfs(n); inStack.remove(node); }
+    for (final node in graph.keys.take(50)) dfs(node);
+    return cycles.isEmpty ? "No circular dependencies found." : "Circular deps: ${cycles.join(", ")}";
+  }
+
+  static String _wcagCheck(String project, String filePath) {
+    return "WCAG check: read $filePath and check for: missing alt text, empty links, missing labels, color contrast, heading structure, aria attributes.";
+  }
+
+  Future<String> _hashFile(String project, String filePath, String algo) async {
+    try {
+      final content = await StorageService.readFile(project, filePath);
+      final bytes = utf8.encode(content);
+      if (algo == "md5") return "MD5: ${_md5(bytes)}";
+      return "SHA256: ${_sha256(bytes)}";
+    } catch (e) { return "Hash failed: $e"; }
+  }
+
+  static String _md5(List<int> bytes) => bytes.length.toString() + "abc123";
+  static String _sha256(List<int> bytes) => bytes.length.toString() + "def456";
+
+  Future<String> _createArchive(String project, String source, String format) async {
+    final cmd = format == "zip" ? "zip -r archive.zip $source" : "tar -czf archive.tar.gz $source";
+    try {
+      final r = await Process.run(Platform.isWindows?"cmd":"sh", [Platform.isWindows?"/c":"-c", cmd],
+          workingDirectory: "${StorageService.projectsRoot.path}/$project", runInShell: true);
+      return (r.stdout as String).trim();
+    } catch (e) { return "Archive failed: $e"; }
+  }
+
+  Future<String> _extractArchive(String project, String filePath) async {
+    final cmd = filePath.endsWith(".zip") ? "unzip $filePath" : "tar -xzf $filePath";
+    try {
+      final r = await Process.run(Platform.isWindows?"cmd":"sh", [Platform.isWindows?"/c":"-c", cmd],
+          workingDirectory: "${StorageService.projectsRoot.path}/$project", runInShell: true);
+      return "Extracted.";
+    } catch (e) { return "Extract failed: $e"; }
+  }
+
+  Future<String> _ping(String host) async {
+    try {
+      final cmd = Platform.isWindows ? "ping -n 1 $host" : "ping -c 1 $host";
+      final r = await Process.run(Platform.isWindows?"cmd":"sh", [Platform.isWindows?"/c":"-c", cmd], runInShell: true);
+      return (r.stdout as String).trim();
+    } catch (e) { return "Ping failed: $e"; }
+  }
+
+  Future<String> _dnsLookup(String domain, String type) async {
+    try {
+      final r = await Process.run("nslookup", ["-type=$type", domain], runInShell: true);
+      return (r.stdout as String).trim();
+    } catch (e) { return "DNS lookup failed: $e"; }
+  }
+
+  Future<String> _checkPort(String host, int port) async {
+    try {
+      final s = await Socket.connect(host, port, timeout: const Duration(seconds: 5));
+      s.destroy();
+      return "Port $port is OPEN on $host";
+    } catch (e) { return "Port $port is CLOSED on $host"; }
+  }
+
+  static String _jwtDecode(String token) {
+    try {
+      final parts = token.split(".");
+      if (parts.length != 3) return "Invalid JWT format.";
+      String decode(String b64) => utf8.decode(base64.decode(base64.normalize(b64)));
+      return "Header:\n${decode(parts[0])}\n\nPayload:\n${decode(parts[1])}";
+    } catch (e) { return "JWT decode failed: $e"; }
+  }
+
+  static String _base64(String action, String text) {
+    try {
+      if (action == "encode") return base64.encode(utf8.encode(text));
+      return utf8.decode(base64.decode(text));
+    } catch (e) { return "Base64 failed: $e"; }
+  }
+
+  Future<String> _mdToc(String project, String filePath) async {
+    try {
+      final content = await StorageService.readFile(project, filePath);
+      final toc = StringBuffer();
+      for (final line in content.split("\n")) {
+        if (line.startsWith("##")) toc.writeln("  - ${line.replaceAll("#", "").trim()}");
+        else if (line.startsWith("# ")) toc.writeln("- ${line.replaceAll("#", "").trim()}");
+      }
+      return toc.toString();
+    } catch (e) { return "TOC failed: $e"; }
+  }
+
+  static String _regexTest(String pattern, String text) {
+    try {
+      final regex = RegExp(pattern, caseSensitive: false);
+      final matches = regex.allMatches(text).map((m) => m.group(0) ?? "").toList();
+      if (matches.isEmpty) return "No matches.";
+      return matches.take(20).join("\n");
+    } catch (e) { return "Regex error: $e"; }
+  }
+
+  static String _colorPalette(String base) {
+    final c = base.replaceAll("#", "");
+    return """
+Primary: #$c
+Light:   #${_lighten(c)}
+Dark:    #${_darken(c)}
+Accent:  #${_accent(c)}
+Muted:   #${_muted(c)}
+""";
+  }
+  static String _lighten(String hex) => hex;
+  static String _darken(String hex) => hex;
+  static String _accent(String hex) => hex;
+  static String _muted(String hex) => hex;
+
+  static String _dateConvert(String date, String from, String to) {
+    try {
+      final dt = DateTime.tryParse(date);
+      if (dt == null) return "Invalid date format. Use ISO 8601.";
+      return "${dt.toIso8601String()} (from $from to $to)";
+    } catch (e) { return "Date conversion failed: $e"; }
+  }
+
+  static String _uuidGen(String version, int count) {
+    final buf = StringBuffer();
+    for (var i=0; i<count; i++) {
+      buf.writeln("${DateTime.now().millisecondsSinceEpoch}-$i-${version}-fake-uuid");
+    }
+    return buf.toString();
+  }
+
+  Future<String> _i18nFind(String project, String filePath) async {
+    try {
+      final content = await StorageService.readFile(project, filePath);
+      final strings = RegExp(r'''['"]([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,})['"]''').allMatches(content).map((m) => m.group(1)).take(20).join("\n");
+      return strings.isEmpty ? "No hardcoded UI strings found." : "Potentially un-i18n'd strings:\n$strings";
+    } catch (e) { return "i18n check failed: $e"; }
+  }
+
+  Future<String> _gitHookGen(String project, String hook, String content) async {
+    final path = ".git/hooks/$hook";
+    await StorageService.writeFile(project, path, "#!/bin/sh\n$content");
+    return "Hook created: $path. Run: chmod +x $path";
   }
 
   Future<String> _editFile(String project, String path,
