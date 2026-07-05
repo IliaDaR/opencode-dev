@@ -2537,7 +2537,7 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
         "max_tokens": 4096,
       });
 
-      Map<String, dynamic>? postResponse;
+      http.Response? postResponse;
       try {
         postResponse = await http.post(
           Uri.parse(_apiUrl),
@@ -2549,8 +2549,8 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
           body: body,
         ).timeout(const Duration(seconds: 90));
       } catch (e) {
-        if (e is SocketException || e is TimeoutException || e.toString().contains("SocketException") || e.toString().contains("TimeoutException")) {
-          yield "Connection failed: unable to reach API server. Check your internet connection and try again.";
+        if (e.toString().contains("SocketException") || e.toString().contains("TimeoutException")) {
+          yield "Connection failed: unable to reach API server. Check your internet.";
         } else {
           yield "API request failed: $e";
         }
