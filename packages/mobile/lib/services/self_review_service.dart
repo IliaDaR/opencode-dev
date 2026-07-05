@@ -82,10 +82,10 @@ class SelfReviewService {
       if (content.contains("any") && filePath.endsWith(".ts")) {
         checks.add("⚠️ 'any' type found — use unknown");
       }
-      if (RegExp(r'password\s*=\s*["\']').hasMatch(content)) {
+      if (RegExp("password\\s*=\\s*[\"']").hasMatch(content)) {
         checks.add("🔴 Possible hardcoded password!");
       }
-      if (RegExp(r'api_key\s*=\s*["\']').hasMatch(content)) {
+      if (RegExp("api.?key\\s*=\\s*[\"']").hasMatch(content)) {
         checks.add("🔴 Possible hardcoded API key!");
       }
 
