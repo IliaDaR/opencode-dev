@@ -140,7 +140,7 @@ class MultiProviderService {
     if(res.statusCode==200)return jsonDecode(res.body);
     return null;
   }
-      List<Map<String, dynamic>> messages,
+  static Future<Map<String, dynamic>?> _callAnthropic(
       {List<Map<String, dynamic>>? tools, double temp = 0.2, int maxTokens = 4096}) async {
     final body = jsonEncode({
       "model": "claude-3-haiku-20240307",

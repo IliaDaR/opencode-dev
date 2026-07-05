@@ -2303,7 +2303,7 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
   Future<String> _genEnvExample(String project) async {
     final vars = <String>{};
     await _walk(project, "", (file, content) {
-      for (final m in RegExp(r'process\.env\.(\w+)|os\.environ\[["\'](\w+)["\']|getenv\(["\'](\w+)["\']').allMatches(content)) {
+      for (final m in RegExp(r"process\.env\.(\w+)|os\.environ\[""(\w+)""]|getenv\((\w+)\)|\b(\w+)=\s*process\.env").allMatches(content)) {
         vars.add(m.group(1) ?? m.group(2) ?? m.group(3) ?? "");
       }
     });
