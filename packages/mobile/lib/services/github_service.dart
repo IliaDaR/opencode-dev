@@ -234,6 +234,23 @@ class GitHubService {
     }
   }
 
+  /// Create a Pull Request
+  static Future<String> createPR(
+      String owner, String repo, String title, String body,
+      {String head = "master", String base = "main"}) async {
+    try {
+      final pr = await _post("/repos/$owner/$repo/pulls", {
+        "title": title,
+        "body": body,
+        "head": head,
+        "base": base,
+      });
+      return "Created PR #${pr["number"]}: ${pr["html_url"]}";
+    } catch (e) {
+      return "PR creation failed: $e";
+    }
+  }
+
   /// List releases
   static Future<String> listReleases(
       String owner, String repo) async {

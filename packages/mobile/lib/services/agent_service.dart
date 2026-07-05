@@ -26,6 +26,9 @@ import "self_review_service.dart";
 import "autonomous_loop.dart";
 import "project_onboarding.dart";
 import "error_learning_service.dart";
+import "security_scan_service.dart";
+import "api_tester.dart";
+import "debate_service.dart";
 import "skills.dart";
 import "session_memory.dart";
 import "research_service.dart";
@@ -1367,13 +1370,79 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
       "type": "function",
       "function": {
         "name": "project_summary",
-        "description": "Get a comprehensive summary of a project: tech stack, dependencies, structure, available commands. Use when opening a project for the first time.",
+        "description": "Get a comprehensive summary of a project: tech stack, dependencies, structure. Use when opening a project.",
         "parameters": {
           "type": "object",
           "properties": {
             "project": {"type": "string"},
           },
           "required": ["project"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "security_scan",
+        "description": "Scan the entire project for OWASP Top 10 vulnerabilities: hardcoded secrets, injection risks, weak crypto, auth issues.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "project": {"type": "string"},
+          },
+          "required": ["project"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "api_test",
+        "description": "Test a REST API endpoint. GET or POST. Returns status code and response body.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "method": {"type": "string", "enum": ["GET", "POST"]},
+            "url": {"type": "string"},
+            "body": {"type": "string", "description": "Request body for POST"},
+            "headers": {"type": "object", "description": "Custom headers"},
+          },
+          "required": ["method", "url"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "debate",
+        "description": "Run a structured debate between two sub-agents on a topic. Agent1 argues FOR, Agent2 argues AGAINST. Synthesize the resolution.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "topic": {"type": "string"},
+            "agent1": {"type": "string", "description": "First sub-agent type"},
+            "agent2": {"type": "string", "description": "Second sub-agent type"},
+          },
+          "required": ["topic", "agent1", "agent2"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "create_pr",
+        "description": "Create a GitHub Pull Request with the current changes. Use after committing.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "owner": {"type": "string"},
+            "repo": {"type": "string"},
+            "title": {"type": "string"},
+            "body": {"type": "string"},
+            "head": {"type": "string", "description": "Source branch (default: master)"},
+            "base": {"type": "string", "description": "Target branch (default: main)"},
+          },
+          "required": ["owner", "repo", "title", "body"],
         },
       },
     },
@@ -1649,6 +1718,26 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
         case "project_summary":
           return await ProjectOnboarding.summarize(
               args["project"]);
+        case "security_scan":
+          return await SecurityScanService.scanProject(
+              args["project"]);
+        case "api_test":
+          if (args["method"] == "POST") {
+            return await ApiTester.post(
+                args["url"], args["body"] ?? "{}",
+                headers: args["headers"]?.cast<String, String>());
+          }
+          return await ApiTester.get(args["url"],
+              headers: args["headers"]?.cast<String, String>());
+        case "debate":
+          return await DebateService.debate(
+              args["topic"], args["agent1"], args["agent2"]);
+        case "create_pr":
+          return await GitHubService.createPR(
+              args["owner"], args["repo"],
+              args["title"], args["body"],
+              head: args["head"] ?? "master",
+              base: args["base"] ?? "main");
         // Deployment
         case "check_deploy_readiness":
           return await DeploymentService
