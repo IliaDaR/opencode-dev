@@ -1,3 +1,4 @@
+import "package:flutter/material.dart";
 import "package:shared_preferences/shared_preferences.dart";
 
 class SettingsService {
@@ -5,6 +6,17 @@ class SettingsService {
 
   static Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
+  }
+
+  // ... existing getters/setters ...
+
+  static ThemeMode get themeMode {
+    final v = _prefs.getString("theme_mode") ?? "dark";
+    return v == "light" ? ThemeMode.light : ThemeMode.dark;
+  }
+
+  static set themeMode(ThemeMode mode) {
+    _prefs.setString("theme_mode", mode == ThemeMode.light ? "light" : "dark");
   }
 
   static String get deepseekApiKey {
