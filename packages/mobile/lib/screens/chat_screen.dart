@@ -9,6 +9,7 @@ import "../services/offline_queue.dart";
 import "../services/user_profile.dart";
 import "../services/settings_service.dart";
 import "../services/localization.dart";
+import "../services/snapshot_service.dart";
 import "file_browser_screen.dart";
 import "settings_screen.dart";
 
@@ -247,6 +248,25 @@ class _ChatScreenState extends State<ChatScreen> {
         await _agent.reset();
         setState(() { _messages.clear(); _mode = AgentMode.auto; });
         _addSystem("Fresh session.");
+        return;
+      }
+      if (cmd == "/undo" && _projectName != null) {
+        final r = await SnapshotService.undoAll(_projectName!);
+        _addSystem(r);
+        return;
+      }
+      if (cmd == "/format" && _projectName != null) {
+        _addSystem("Format project code... (use format_code tool in chat for specific files)");
+        return;
+      }
+      if (cmd == "/commit" && _projectName != null && _gitService != null) {
+        final msg = parts.length > 1 ? parts.sublist(1).join(" ") : "update from mobile";
+        final r = await _gitService!.commitAndPush(msg);
+        _addSystem(r);
+        return;
+      }
+      if (cmd == "/learn") {
+        _addSystem("Learning from session... (the agent automatically remembers decisions)");
         return;
       }
     }

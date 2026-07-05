@@ -12,6 +12,11 @@ import "deployment_service.dart";
 import "project_service.dart";
 import "code_generation_service.dart";
 import "brainstorm_engine.dart";
+import "snapshot_service.dart";
+import "compaction_service.dart";
+import "multi_provider_service.dart";
+import "permission_service.dart";
+import "formatter_service.dart";
 import "skills.dart";
 import "session_memory.dart";
 import "research_service.dart";
@@ -1215,6 +1220,74 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
         },
       },
     },
+    {
+      "type": "function",
+      "function": {
+        "name": "snapshot_undo",
+        "description": "Undo the last change to a file. Restores previous version from snapshot.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "project": {"type": "string"},
+            "file_path": {"type": "string"},
+          },
+          "required": ["project", "file_path"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "snapshot_undo_all",
+        "description": "Undo ALL changes in this session. Restores all modified files.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "project": {"type": "string"},
+          },
+          "required": ["project"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "format_code",
+        "description": "Format source code using appropriate formatter (prettier/ruff/dart fmt/gofmt).",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "project": {"type": "string"},
+            "file_path": {"type": "string"},
+          },
+          "required": ["project", "file_path"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "batch_execute",
+        "description": "Execute multiple independent tool calls in parallel. Provide array of {tool, args} objects.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "calls": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "tool": {"type": "string"},
+                  "args": {"type": "object"},
+                },
+                "required": ["tool", "args"],
+              },
+            },
+          },
+          "required": ["calls"],
+        },
+      },
+    },
   ];
 
   void setMode(AgentMode mode) {
@@ -1281,6 +1354,9 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
           return await StorageService.readFile(
               args["project"], args["path"]);
         case "write_file":
+          await SnapshotService.init();
+          await SnapshotService.snapshot(
+              args["project"], args["path"]);
           await StorageService.writeFile(
               args["project"], args["path"], args["content"]);
           return "File written: ${args["path"]}";
@@ -1296,6 +1372,8 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
               })
               .join("\n");
         case "delete_file":
+          await SnapshotService.snapshot(
+              args["project"], args["path"]);
           await StorageService.deleteFile(
               args["project"], args["path"]);
           return "Deleted: ${args["path"]}";
@@ -1445,6 +1523,18 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
         case "delegate_task":
           return await SubAgentService.delegate(
               args["agent_type"], args["task"]);
+        case "snapshot_undo":
+          return await SnapshotService.undo(
+              args["project"], args["file_path"]);
+        case "snapshot_undo_all":
+          return await SnapshotService.undoAll(
+              args["project"]);
+        case "format_code":
+          return await FormatterService.format(
+              args["project"], args["file_path"]);
+        case "batch_execute":
+          return await _batchExecute(args["calls"] as List);
+        }
         // Deployment
         case "check_deploy_readiness":
           return await DeploymentService
@@ -1602,6 +1692,19 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
     } catch (e) {
       return "Cannot analyze file: $e";
     }
+  }
+
+  Future<String> _batchExecute(
+      List<dynamic> calls) async {
+    final futures = calls.map((c) async {
+      final tool = c["tool"] as String;
+      final args =
+          Map<String, dynamic>.from(c["args"] ?? {});
+      final r = await _executeTool(tool, args);
+      return "$tool: $r";
+    });
+    final results = await Future.wait(futures);
+    return results.join("\n\n");
   }
 
   Future<String> _editFile(String project, String path,
