@@ -1,7 +1,7 @@
 import "package:flutter/material.dart";
 import "../services/localization.dart";
 import "../services/settings_service.dart";
-import "projects_screen.dart";
+import "simple_config_screen.dart";
 
 class LanguageScreen extends StatefulWidget {
   const LanguageScreen({super.key});
@@ -43,9 +43,9 @@ class _LanguageScreenState extends State<LanguageScreen> {
               const Spacer(),
               FilledButton(
                 onPressed: () {
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (_) => const ProjectsScreen()),
-                  );
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (_) => const SimpleConfigScreen()),
+                    );
                 },
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF58A6FF),

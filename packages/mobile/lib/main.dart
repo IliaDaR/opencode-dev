@@ -2,29 +2,26 @@ import "package:flutter/material.dart";
 import "package:flutter/services.dart";
 import "package:google_fonts/google_fonts.dart";
 import "screens/language_screen.dart";
-import "screens/projects_screen.dart";
+import "screens/simple_config_screen.dart";
+import "screens/chat_screen.dart";
 import "services/settings_service.dart";
 import "services/localization.dart";
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await SystemChrome.setPreferredOrientations(
-      [DeviceOrientation.portraitUp]);
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   await SettingsService.init();
-  AppLocalization.current = SettingsService.language;
+  AppLocalization.current = SettingsService.language.isEmpty ? "en" : SettingsService.language;
   runApp(const OpenCodeApp());
 }
 
-class OpenCodeApp extends StatefulWidget {
+class OpenCodeApp extends StatelessWidget {
   const OpenCodeApp({super.key});
-  @override
-  State<OpenCodeApp> createState() => _OpenCodeAppState();
-}
 
-class _OpenCodeAppState extends State<OpenCodeApp> {
   @override
   Widget build(BuildContext context) {
-    final showLanguage = SettingsService.language.isEmpty;
+    final showLang = SettingsService.language.isEmpty;
+    final showConfig = !showLang && !SettingsService.isConfigured;
 
     return MaterialApp(
       title: "OpenCode",
@@ -46,8 +43,7 @@ class _OpenCodeAppState extends State<OpenCodeApp> {
         ),
         cardTheme: const CardTheme(
           color: Color(0xFF161B22),
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(12))),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
         ),
         inputDecorationTheme: const InputDecorationTheme(
           filled: true,
@@ -64,15 +60,15 @@ class _OpenCodeAppState extends State<OpenCodeApp> {
             borderRadius: BorderRadius.all(Radius.circular(12)),
             borderSide: BorderSide(color: Color(0xFF58A6FF)),
           ),
-          contentPadding:
-              EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
-        textTheme:
-            GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
+        textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
       ),
-      home: showLanguage
+      home: showLang
           ? const LanguageScreen()
-          : const ProjectsScreen(),
+          : showConfig
+              ? const SimpleConfigScreen()
+              : const ChatScreen(),
     );
   }
 }
