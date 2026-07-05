@@ -71,16 +71,16 @@ class SecurityScanService {
     }
 
     // A6: Vulnerable Components — check hardcoded versions
-    if (RegExp(r'version\s*=\s*["\']0\.\d+|version\s*=\s*["\']\d+\.0\.0["\']').hasMatch(content)) {
+    if (RegExp("version\\s*=\\s*[\"']0\\.\\d+|version\\s*=\\s*[\"']\\d+\\.0\\.0[\"']").hasMatch(content)) {
       issues.add("ℹ️ A6: Very early version dependency — check for known CVEs");
     }
 
     // A7: Auth Failures
-    if (RegExp(r'password\s*=\s*["\'][^"\']+["\']').hasMatch(content) &&
+    if (RegExp("password\\s*=\\s*[\"'][^\"']+[\"']").hasMatch(content) &&
         !content.contains(".env") && !content.contains("example")) {
       issues.add("🔴 A7: Hardcoded password detected");
     }
-    if (RegExp(r'api.?key\s*=\s*["\'][^"\']+["\']|secret\s*=\s*["\'][^"\']+["\']|token\s*=\s*["\'][^"\']+["\']').hasMatch(content) &&
+    if (RegExp("api.?key\\s*=\\s*[\"'][^\"']+[\"']|secret\\s*=\\s*[\"'][^\"']+[\"']|token\\s*=\\s*[\"'][^\"']+[\"']").hasMatch(content) &&
         !filePath.contains(".env.example") && !content.contains("process.env") && !content.contains("import.meta.env")) {
       issues.add("🔴 A7: Hardcoded secret/key/token detected");
     }
@@ -92,7 +92,7 @@ class SecurityScanService {
     }
 
     // A10: SSRF
-    if (RegExp(r'fetch\s*\(\s*[a-zA-Z]|axios\.get\s*\(\s*[a-zA-Z]|requests\.get\s*\(\s*[a-zA-Z]|curl\s+').hasMatch(content) &&
+    if (RegExp("fetch\\s*\\(\\s*[a-zA-Z]|axios\\.get\\s*\\(\\s*[a-zA-Z]|requests\\.get\\s*\\(\\s*[a-zA-Z]|curl\\s+").hasMatch(content) &&
         RegExp(r'url|request\.params|req\.query|req\.body').hasMatch(content)) {
       issues.add("⚠️ A10: Potential SSRF — user input in HTTP request URL");
     }
