@@ -18,6 +18,10 @@ import "multi_provider_service.dart";
 import "permission_service.dart";
 import "formatter_service.dart";
 import "mcp_client.dart";
+import "diff_service.dart";
+import "error_recovery_service.dart";
+import "code_index.dart";
+import "execution_plan_service.dart";
 import "skills.dart";
 import "session_memory.dart";
 import "research_service.dart";
@@ -1293,15 +1297,46 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
       "type": "function",
       "function": {
         "name": "mcp_call",
-        "description": "Call a tool on a remote MCP (Model Context Protocol) server. Use for servers that expose tools via MCP protocol. Provide server URL, tool name, and arguments.",
+        "description": "Call a tool on a remote MCP (Model Context Protocol) server via HTTP. Provide server URL, tool name, arguments.",
         "parameters": {
           "type": "object",
           "properties": {
-            "url": {"type": "string", "description": "MCP server URL"},
-            "tool": {"type": "string", "description": "Tool name"},
-            "args": {"type": "object", "description": "Tool arguments"},
+            "url": {"type": "string"},
+            "tool": {"type": "string"},
+            "args": {"type": "object"},
           },
           "required": ["url", "tool", "args"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "diff_preview",
+        "description": "Preview the diff of a pending edit before applying it. Shows what lines will be added and removed.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "project": {"type": "string"},
+            "file_path": {"type": "string"},
+            "old_string": {"type": "string"},
+            "new_string": {"type": "string"},
+          },
+          "required": ["project", "file_path", "old_string", "new_string"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "create_plan",
+        "description": "Create a structured execution plan for complex tasks before implementing. Plan first, then execute.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "task": {"type": "string", "description": "Task description"},
+          },
+          "required": ["task"],
         },
       },
     },
@@ -1555,7 +1590,15 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
           return await McpClient.quickCall(
               url: args["url"],
               tool: args["tool"],
-              args: Map<String, dynamic>.from(args["args"] ?? {}));
+              args: Map<String, dynamic>.from(
+                  args["args"] ?? {}));
+        case "diff_preview":
+          return await DiffService.previewEdit(
+              args["project"], args["file_path"],
+              args["old_string"], args["new_string"]);
+        case "create_plan":
+          return ExecutionPlanService.createPlan(
+              args["task"], {});
         // Deployment
         case "check_deploy_readiness":
           return await DeploymentService
