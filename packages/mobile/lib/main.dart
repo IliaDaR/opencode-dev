@@ -6,14 +6,12 @@ import "screens/simple_config_screen.dart";
 import "screens/chat_screen.dart";
 import "services/settings_service.dart";
 import "services/localization.dart";
-import "services/background_service.dart";
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   await SettingsService.init();
   AppLocalization.current = SettingsService.language.isEmpty ? "en" : SettingsService.language;
-  await BackgroundService.init();
   runApp(const OpenCodeApp());
 }
 
