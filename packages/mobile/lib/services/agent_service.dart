@@ -1534,7 +1534,6 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
               args["project"], args["file_path"]);
         case "batch_execute":
           return await _batchExecute(args["calls"] as List);
-        }
         // Deployment
         case "check_deploy_readiness":
           return await DeploymentService
