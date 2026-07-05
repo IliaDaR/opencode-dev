@@ -165,11 +165,8 @@ class _ChatScreenState extends State<ChatScreen> {
     if (file == null) return;
 
     final bytes = await file.readAsBytes();
-    final base64 = base64Encode(bytes);
-    final mime = file.path.endsWith(".png") ? "image/png" : "image/jpeg";
 
     _addSystem("[Image attached: ${file.path.split('/').last}]");
-    _addUser("[Image: data:$mime;base64,${base64.substring(0, 50)}...]");
 
     // Send as user message with image context
     final imageMsg = "I'm sharing an image. Please analyze it and tell me what you see, any code or errors visible, and what I should do.";
