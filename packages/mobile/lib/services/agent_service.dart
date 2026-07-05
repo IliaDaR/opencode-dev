@@ -2100,8 +2100,14 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
         case "compare_branches": return "Use run_command: git diff ${args["base"]}..${args["head"]} --stat";
         case "generate_changelog": if (gitService != null) return DocumentationService.generateChangelog(await gitService!.getLog(limit: 50)); return "Git not configured.";
         case "generate_release_notes": return "Use run_command: gh release create";
-        case "run_task": final e = AgentTaskLibrary.tasks[args["task_id"]]; return e != null ? e["desc"]! : "Unknown task. Use list_tasks.";
-        case "list_tasks": return _listTasks(args["category"] ?? "all");
+        case "run_task": final e = AgentTaskLibrary.tasks[args["task_id"]]; return e != null ? e["desc"]! : "Unknown. Use list_tasks.";
+        case "list_tasks":
+          final cat = (args["category"] as String?) ?? "all";
+          final tasks = AgentTaskLibrary.tasks.entries
+              .where((e) => cat == "all" || e.key.startsWith(cat))
+              .map((e) => "- ${e.key}: ${e["desc"]}")
+              .join("\n");
+          return tasks.isEmpty ? "No tasks found for category: $cat" : tasks;
         case "naming_convention": return "files=kebab-case, funcs=camelCase, classes=PascalCase";
         case "index_suggestion": return "Index columns in WHERE/JOIN/ORDER BY. Use EXPLAIN ANALYZE on slow queries.";
         case "seed_data_gen": return _genMock("sql", args["count"] ?? 10);
