@@ -1,5 +1,8 @@
 import "dart:async";
+import "dart:convert";
+import "dart:io";
 import "package:flutter/material.dart";
+import "package:image_picker/image_picker.dart";
 import "../services/agent_service.dart";
 import "../services/git_service.dart";
 import "../services/storage_service.dart";
@@ -10,6 +13,7 @@ import "../services/user_profile.dart";
 import "../services/settings_service.dart";
 import "../services/localization.dart";
 import "../services/snapshot_service.dart";
+import "../services/session_sharing_service.dart";
 import "file_browser_screen.dart";
 import "settings_screen.dart";
 
@@ -128,6 +132,73 @@ class _ChatScreenState extends State<ChatScreen> {
     await _agent.reset();
 
     _addAssistant("Project **$repoName** is ready. What should we work on?");
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final source = await showDialog<ImageSource>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text("Attach image"),
+        children: [
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(ctx, ImageSource.camera),
+            child: const Text("Camera"),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(ctx, ImageSource.gallery),
+            child: const Text("Gallery"),
+          ),
+        ],
+      ),
+    );
+
+    if (source == null) return;
+
+    final file = await picker.pickImage(
+      source: source,
+      maxWidth: 1024,
+      maxHeight: 1024,
+      imageQuality: 80,
+    );
+
+    if (file == null) return;
+
+    final bytes = await file.readAsBytes();
+    final base64 = base64Encode(bytes);
+    final mime = file.path.endsWith(".png") ? "image/png" : "image/jpeg";
+
+    _addSystem("[Image attached: ${file.path.split('/').last}]");
+    _addUser("[Image: data:$mime;base64,${base64.substring(0, 50)}...]");
+
+    // Send as user message with image context
+    final imageMsg = "I'm sharing an image. Please analyze it and tell me what you see, any code or errors visible, and what I should do.";
+    if (!mounted) return;
+    setState(() {
+      _messages.add(UIMessage(id: ++_messageIdCounter, type: UIMessageType.user, content: imageMsg));
+      _loading = true;
+    });
+    _scrollDown();
+
+    _agent.onToolCall = (tool, args) => _addToolPending(tool, args);
+    _agent.onToolResult = (tool, args, result) => _addToolCall(tool, args, result);
+
+    String text = "";
+    try {
+      final stream = _agent.sendMessage(imageMsg);
+      await for (final chunk in stream) {
+        text += chunk;
+        _addAssistant(text);
+      }
+      if (_messages.isNotEmpty && _messages.last.isStreaming) {
+        setState(() => _messages.last.isStreaming = false);
+      }
+    } catch (e) {
+      _addSystem("Error: $e");
+    }
+    _agent.onToolCall = null;
+    _agent.onToolResult = null;
+    if (mounted) setState(() => _loading = false);
   }
 
   void _addSystem(String text) {
@@ -266,7 +337,37 @@ class _ChatScreenState extends State<ChatScreen> {
         return;
       }
       if (cmd == "/learn") {
-        _addSystem("Learning from session... (the agent automatically remembers decisions)");
+        _addSystem("Learning from session... (agent remembers decisions automatically)");
+        return;
+      }
+      if (cmd == "/share" && _projectName != null) {
+        _addSystem("Exporting session...");
+        final summary = SessionSharingService.generateShareSummary(
+            _agent.messages.map((m) => m.toJson()).toList());
+        try {
+          final r = await SessionSharingService.exportSession(
+              _projectName!,
+              _agent.messages.map((m) => m.toJson()).toList(),
+              gitService: _gitService);
+          _addSystem(r);
+          _addAssistant("Session shared! Others can view it in .opencode/sessions/\n\nSummary:\n$summary");
+        } catch (e) {
+          _addSystem("Share failed: $e");
+        }
+        return;
+      }
+      if (cmd == "/changelog" && _projectName != null && _gitService != null) {
+        final log = await _gitService!.getLog(limit: 20);
+        _addSystem("Recent commits:\n${log.join("\n")}");
+        _addSystem("Ask me to generate a changelog from these commits.");
+        return;
+      }
+      if (cmd == "/rmslop") {
+        _addSystem("Send me the file you want cleaned. I'll remove: unnecessary comments, defensive checks, any casts, inconsistent style.");
+        return;
+      }
+      if (cmd == "/spellcheck") {
+        _addSystem("Send me the file or text to check. I'll find spelling and grammar errors.");
         return;
       }
     }
@@ -412,6 +513,15 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         )),
         const SizedBox(width: 6),
+        IconButton(
+          icon: const Icon(Icons.camera_alt, size: 22),
+          color: const Color(0xFF8B949E),
+          onPressed: _loading ? null : _pickImage,
+          tooltip: "Attach image",
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+        ),
+        const SizedBox(width: 2),
         FilledButton(
           onPressed: _loading ? null : _send,
           style: FilledButton.styleFrom(
