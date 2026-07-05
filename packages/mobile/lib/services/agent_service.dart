@@ -71,7 +71,7 @@ class AgentService {
   static const String _apiUrl =
       "https://api.deepseek.com/v1/chat/completions";
 
-  final String projectName;
+  String projectName;
   GitService? gitService;
   final List<Message> messages = [];
   AgentMode currentMode = AgentMode.auto;
@@ -234,8 +234,8 @@ class AgentService {
   /// Compress context if conversation is too long
   void maybeCompress() {
     if (messages.length > 30) {
-      messages.setAll(
-          0, ContextManager.compress(messages, keepLast: 6));
+      final compressed = ContextManager.compress(messages, keepLast: 6);
+      messages.replaceRange(0, messages.length, compressed);
     }
   }
 
@@ -373,7 +373,7 @@ SQL: sql_detect, sql_query, sql_schema
 QUALITY: diagnose_file, analyze_project, check_imports, find_patterns, suggest_tests
 INTELLIGENCE: impact_analysis, ask_user, create_tasks
 DEPLOY: check_deploy_readiness, generate_docker_compose, generate_ci_config
-DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | researcher)
+DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | researcher | typesmith | qa_engineer | ab_tester)
 
 ## CODE RULES
 - No try/catch unless unavoidable. No 'any' in TypeScript. No 'else'.

@@ -57,37 +57,16 @@ class _ChatScreenState extends State<ChatScreen> {
     await StorageService.init();
     await SessionMemory.init();
     await _agent.scanProject();
+    await _agent.reset();
 
-    final hasKey = SettingsService.deepseekApiKey.isNotEmpty;
-    final hasGithub = SettingsService.githubToken.isNotEmpty;
-
-    if (hasGithub) {
-      _addSystem("GitHub connected as ${SettingsService.githubUser}");
-    }
-
-    _addAssistant(
-      hasKey
-          ? "I'm OpenCode — your AI coding agent.\n\n"
-            "I can:\n"
-            "• Write, read, and edit code\n"
-            "• Search the web and read docs\n"
-            "• Manage GitHub repos and issues\n"
-            "• Run terminal commands\n"
-            "• Delegate to specialized sub-agents\n\n"
-            "Commands:\n"
-            "/clone <repo> — clone a GitHub project\n"
-            "/projects — list local projects\n"
-            "/github <token> <user> — connect GitHub\n"
-            "/config — change API keys\n"
-            "/files — browse project files\n"
-            "/brainstorm /research /architect /code /debug /refactor\n"
-            "/help — all commands\n\n"
-            "What are we working on?"
-          : "I'm OpenCode. Your API key is set.\n\n"
-            "To connect GitHub, type: /github <token> <username>\n"
-            "Then you can: /clone <repo> to get started.\n\n"
-            "What would you like to do?",
-    );
+    final hasSession = await _agent.loadSession();
+    if (hasSession) {
+      _addSystem("Session restored — continuing where we left off");
+      for (final m in _agent.messages) {
+        if (m.role == "user") _addUser(m.content);
+        if (m.role == "assistant" && m.content.isNotEmpty) _addAssistant(m.content);
+      }
+    } else {
   }
 
   Future<void> _connectGithub(String token, String user) async {
@@ -138,6 +117,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _projectName = repoName;
     _gitService = gs;
 
+    _agent.projectName = repoName;
     _agent.setGitService(gs);
     _sync = SyncService(projectName: repoName, gitService: gs);
     await _agent.scanProject();
