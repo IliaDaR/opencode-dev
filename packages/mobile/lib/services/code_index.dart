@@ -1,3 +1,4 @@
+import "dart:io";
 import "storage_service.dart";
 
 /// Pre-built code index for fast searches
