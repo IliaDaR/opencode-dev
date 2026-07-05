@@ -2,6 +2,7 @@ import "dart:async";
 import "dart:io";
 import "package:flutter/material.dart";
 import "package:image_picker/image_picker.dart";
+import "package:speech_to_text/speech_to_text.dart" as stt;
 import "../services/agent_service.dart";
 import "../services/git_service.dart";
 import "../services/storage_service.dart";
@@ -13,6 +14,7 @@ import "../services/settings_service.dart";
 import "../services/localization.dart";
 import "../services/snapshot_service.dart";
 import "../services/session_sharing_service.dart";
+import "../services/bg_service.dart";
 import "file_browser_screen.dart";
 import "settings_screen.dart";
 
@@ -37,10 +39,14 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _syncing = false;
   int _offlineCount = 0;
   int _messageIdCounter = 0;
+  late final stt.SpeechToText _speech;
+  bool _isListening = false;
 
   @override
   void initState() {
     super.initState();
+    _speech = stt.SpeechToText();
+    BgService.init();
     _agent = AgentService(projectName: "_general_");
     _init();
   }
@@ -195,6 +201,23 @@ class _ChatScreenState extends State<ChatScreen> {
     _agent.onToolCall = null;
     _agent.onToolResult = null;
     if (mounted) setState(() => _loading = false);
+  }
+
+  Future<void> _listen() async {
+    if (_isListening) { _speech.stop(); setState(() => _isListening = false); return; }
+    final ok = await _speech.initialize(
+        onStatus: (s) { if (s == "done") setState(() => _isListening = false); },
+        onError: (_) => setState(() => _isListening = false));
+    if (!ok) { _addSystem("Voice not available"); return; }
+    setState(() => _isListening = true);
+    _speech.listen(
+      onResult: (r) {
+        _inputCtrl.text = r.recognizedWords;
+        _inputCtrl.selection = TextSelection.fromPosition(TextPosition(offset: r.recognizedWords.length));
+        if (r.finalResult) setState(() => _isListening = false);
+      },
+      localeId: AppLocalization.current == "ru" ? "ru_RU" : "en_US",
+    );
   }
 
   void _addSystem(String text) {
@@ -395,6 +418,7 @@ class _ChatScreenState extends State<ChatScreen> {
     _agent.onToolCall = null;
     _agent.onToolResult = null;
     if (mounted) setState(() => _loading = false);
+    if (assistantText.isNotEmpty) BgService.show("OpenCode", assistantText);
   }
 
   @override
@@ -508,6 +532,14 @@ class _ChatScreenState extends State<ChatScreen> {
             contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
           ),
         )),
+        const SizedBox(width: 2),
+        IconButton(
+          icon: Icon(_isListening ? Icons.mic : Icons.mic_none, size: 22),
+          color: _isListening ? Colors.red : const Color(0xFF8B949E),
+          onPressed: _loading ? null : _listen,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+        ),
         const SizedBox(width: 6),
         IconButton(
           icon: const Icon(Icons.camera_alt, size: 22),

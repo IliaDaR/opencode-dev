@@ -17,6 +17,7 @@ import "compaction_service.dart";
 import "multi_provider_service.dart";
 import "permission_service.dart";
 import "formatter_service.dart";
+import "mcp_client.dart";
 import "skills.dart";
 import "session_memory.dart";
 import "research_service.dart";
@@ -1268,7 +1269,7 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
       "type": "function",
       "function": {
         "name": "batch_execute",
-        "description": "Execute multiple independent tool calls in parallel. Provide array of {tool, args} objects.",
+        "description": "Execute multiple independent tool calls in parallel.",
         "parameters": {
           "type": "object",
           "properties": {
@@ -1285,6 +1286,22 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
             },
           },
           "required": ["calls"],
+        },
+      },
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "mcp_call",
+        "description": "Call a tool on a remote MCP (Model Context Protocol) server. Use for servers that expose tools via MCP protocol. Provide server URL, tool name, and arguments.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "url": {"type": "string", "description": "MCP server URL"},
+            "tool": {"type": "string", "description": "Tool name"},
+            "args": {"type": "object", "description": "Tool arguments"},
+          },
+          "required": ["url", "tool", "args"],
         },
       },
     },
@@ -1534,6 +1551,11 @@ DELEGATE: delegate_task (architect | scribe | debugger | reviewer | refactor | r
               args["project"], args["file_path"]);
         case "batch_execute":
           return await _batchExecute(args["calls"] as List);
+        case "mcp_call":
+          return await McpClient.quickCall(
+              url: args["url"],
+              tool: args["tool"],
+              args: Map<String, dynamic>.from(args["args"] ?? {}));
         // Deployment
         case "check_deploy_readiness":
           return await DeploymentService
